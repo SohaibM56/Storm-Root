@@ -1,0 +1,188 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Storm Root</string>
+
+    <string name="overlay_notification_title">Storm Root is active</string>
+    <string name="overlay_notification_body">A gentle ambient layer is running in the background.</string>
+
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_save">Save</string>
+    <string name="dialog_sitting_threshold_title">Sitting threshold</string>
+    <string name="dialog_sitting_threshold_subtitle">Choose how long you can sit still before the vines start growing.</string>
+    <string name="dialog_doomscroll_apps_title">Overcast Mist apps</string>
+    <string name="dialog_doomscroll_apps_subtitle">Select which apps count toward your daily scroll limit.</string>
+    <string name="dialog_doomscroll_apps_loading">Loading apps…</string>
+    <string name="dialog_doomscroll_limit_label">Daily limit</string>
+    <string name="module_title_minutes_suffix">(%1$d Minutes)</string>
+    <string name="dialog_bedtime_title">Bedtime</string>
+    <string name="dialog_bedtime_subtitle">Choose when your wind-down window starts.</string>
+
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_1_title">A gentle pause, not a\nlockout.</string>
+    <string name="onboarding_1_body">Storm Root breathes ambient mist and calming warmth onto your screen — giving your attention space to rest without friction or shame.</string>
+    <string name="onboarding_1_badge">Zero guilt · No hard blocks · 100% on-device.</string>
+    <string name="onboarding_1_cta">Explore How It Works</string>
+
+    <string name="onboarding_2_tag">Paced Behavioral Nudges</string>
+    <string name="onboarding_2_title">Atmospheric Layers</string>
+    <string name="onboarding_2_subtitle">Three gentle cues that bring quiet balance to screen time.</string>
+
+    <string name="layer_1_number">LAYER 01</string>
+    <string name="layer_1_title">Feed Slow-Down</string>
+    <string name="layer_1_body">Soft overcast mist appears gently when scrolling accelerates, prompting a natural, steady breath.</string>
+    <string name="layer_1_tag_left">Overcast Mist</string>
+    <string name="layer_1_tag_right">Adaptive</string>
+
+    <string name="layer_2_number">LAYER 02</string>
+    <string name="layer_2_title">Posture &amp; Rest Roots</string>
+    <string name="layer_2_body">Subtle botanical leaf lines prompt you to relax shoulders &amp; breathe after prolonged stillness.</string>
+    <string name="layer_2_tag_left">Moss Green</string>
+    <string name="layer_2_tag_right">Edge Biome</string>
+
+    <string name="layer_3_number">LAYER 03</string>
+    <string name="layer_3_title">Bedtime Warm Drift</string>
+    <string name="layer_3_body">Amber dusk glow diffuses blue light and softens edges as your target bedtime nears.</string>
+    <string name="layer_3_tag_left">Amber Dusk</string>
+    <string name="layer_3_tag_right">Circadian</string>
+
+    <string name="onboarding_2_footer">All layers are customizable and easy to pause anytime.</string>
+    <string name="onboarding_2_cta">Continue to Permissions</string>
+
+    <string name="onboarding_3_tag">PERMISSION TRANSPARENCY</string>
+    <string name="onboarding_3_title">Safe, Private &amp; Simple</string>
+    <string name="onboarding_3_subtitle">To gently show mist and warm tones over other apps, Android needs two transparent permissions.</string>
+
+    <string name="permission_1_title">Display Over Other Apps</string>
+    <string name="permission_1_meta">Android system alert window</string>
+    <string name="permission_1_body">Renders soft mist &amp; amber glows. Never reads messages or keystrokes.</string>
+    <string name="permission_1_cta">Enable Overlay Permission</string>
+    <string name="permission_1_cta_granted">Overlay Permission Granted</string>
+
+    <string name="permission_2_title">Posture Cues</string>
+    <string name="permission_2_meta">Zero GPS or health telemetry</string>
+    <string name="permission_2_body">Detects phone immobility to prompt body relaxation. Zero GPS or health tracking.</string>
+    <string name="permission_2_cta">Allow Posture Cues</string>
+    <string name="permission_2_cta_granted">Posture Cues Allowed</string>
+
+    <string name="permission_3_title">App Usage Access</string>
+    <string name="permission_3_meta">Foreground app awareness</string>
+    <string name="permission_3_body">Lets Doomscroll Weather notice when you\'re in a target app and how long you\'ve used it today. Never reads content.</string>
+    <string name="permission_3_cta">Enable Usage Access</string>
+    <string name="permission_3_cta_granted">Usage Access Granted</string>
+
+    <string name="onboarding_3_info_title">100% On-Device · No accounts · No cloud telemetry</string>
+    <string name="onboarding_3_info_body">All calm visuals and sensor processing remain entirely on your device.</string>
+
+    <string name="onboarding_3_cta">Get Started with Storm Root</string>
+    <string name="onboarding_3_footer">Permissions can be changed anytime in Settings.</string>
+
+    <string name="tab_overview">Overview</string>
+    <string name="tab_overlays">Overlays</string>
+    <string name="tab_insights">Insights</string>
+
+    <string name="header_badge">Calm &amp; Active</string>
+    <string name="header_badge_calm_active">Calm &amp; Active</string>
+    <string name="header_badge_staying_mindful">Staying Mindful</string>
+    <string name="header_badge_getting_started">Getting Started</string>
+    <string name="header_avatar_initial">A</string>
+
+    <string name="overview_mindful_tag">MINDFUL PACE</string>
+    <string name="overview_greeting">Good morning</string>
+    <string name="overview_greeting_morning">Good morning</string>
+    <string name="overview_greeting_afternoon">Good afternoon</string>
+    <string name="overview_greeting_evening">Good evening</string>
+    <string name="overview_body">Your screen atmosphere is balanced.</string>
+    <string name="overview_calm_percent">84%</string>
+    <string name="overview_calm_percent_format">%1$d%%</string>
+    <string name="overview_calm_label">Calm</string>
+
+    <string name="overview_friction_label">Friction applied</string>
+    <string name="overview_friction_value">3 gentle nudges</string>
+    <string name="overview_friction_value_format">%1$d min today</string>
+    <string name="overview_friction_pill">-40% vs yday</string>
+
+    <string name="overview_wind_down_label">Wind-down</string>
+    <string name="overview_wind_down_value">Starts 10:30 PM</string>
+    <string name="overview_wind_down_value_format">Starts %1$s</string>
+    <string name="overview_wind_down_pill">Sunset glow</string>
+
+    <string name="overview_anchors_title">Active Anchors</string>
+    <string name="overview_anchors_count">3 active</string>
+    <string name="overview_anchors_count_format">%1$d active</string>
+
+    <string name="anchor_sitting_roots_title">Sitting Roots</string>
+    <string name="anchor_sitting_roots_subtitle">Posture &amp; stillness cues</string>
+
+    <string name="anchor_doomscroll_mist_title">Doomscroll Mist</string>
+    <string name="anchor_doomscroll_mist_subtitle">Soft haze during rapid scrolling</string>
+
+    <string name="anchor_bedtime_drift_title">Bedtime Drift</string>
+    <string name="anchor_bedtime_drift_subtitle">Warm light shift at 10:30 PM</string>
+    <string name="anchor_bedtime_drift_subtitle_format">Warm light shift at %1$s</string>
+
+    <string name="overlays_title">Overlays &amp; Atmosphere</string>
+    <string name="overlays_badge">Active &amp; Calming</string>
+    <string name="overlays_subtitle">Gentle ambient layers that soften digital glare and restore peace while you navigate.</string>
+
+    <string name="preview_card_title">Atmosphere Preview</string>
+    <string name="preview_card_live">Live simulation</string>
+    <string name="preview_fullscreen_cd">Preview on real screen</string>
+    <string name="preview_tab_soft_mist">Fog Mist</string>
+    <string name="preview_tab_calm_vines">Calm Vines</string>
+    <string name="preview_tab_warm_glow">Storm Drift</string>
+    <string name="preview_caption_soft_mist">Fog drifts over screens</string>
+    <string name="preview_caption_calm_vines">Calm vines wrap around screen edges</string>
+    <string name="preview_caption_warm_glow">Storm rolls in over screens</string>
+    <string name="preview_strength_subtle">Subtle</string>
+    <string name="preview_strength_balanced">Balanced</string>
+    <string name="preview_strength_deep">Deep</string>
+
+    <string name="overlays_preview_button">Play Live Preview</string>
+    <string name="overlays_preview_button_active">Stop Live Preview</string>
+
+    <string name="period_day">Day</string>
+    <string name="period_week">Week</string>
+    <string name="period_month">Month</string>
+
+    <string name="insights_mindful_tag">MINDFUL RHYTHM</string>
+    <string name="insights_calmer_badge">+12% calmer</string>
+    <string name="insights_rhythm_badge_calmer_format">+%1$d%% calmer</string>
+    <string name="insights_rhythm_badge_busier_format">%1$d%% busier</string>
+    <string name="insights_rhythm_badge_neutral">Building rhythm</string>
+    <string name="insights_rest_title">You rested your eyes 6 out of 7 days</string>
+    <string name="insights_rest_title_format">You practiced calm pauses %1$d out of %2$d days</string>
+    <string name="insights_rest_subtitle">A calm, steady balance gifted to presence.</string>
+    <string name="insights_reclaimed_label">DAILY RECLAIMED TIME</string>
+    <string name="insights_reclaimed_label_day">DAILY RECLAIMED TIME</string>
+    <string name="insights_reclaimed_label_week">WEEKLY RECLAIMED TIME</string>
+    <string name="insights_reclaimed_label_month">MONTHLY RECLAIMED TIME</string>
+    <string name="insights_reclaimed_value">42</string>
+    <string name="insights_reclaimed_unit">min</string>
+    <string name="insights_reclaimed_saved">saved\ndaily</string>
+    <string name="insights_reclaimed_saved_day">saved\ntoday</string>
+    <string name="insights_reclaimed_saved_week">saved\nthis week</string>
+    <string name="insights_reclaimed_saved_month">saved\nthis month</string>
+    <string name="insights_reclaimed_note">Reclaimed time gifted to stillness</string>
+    <string name="insights_weekly_rhythm_title">Weekly Rhythm</string>
+    <string name="insights_weekly_rhythm_period">This week</string>
+    <string name="insights_footer">You softly paused <b>18 endless scroll loops</b> this week. A gentle, steady rhythm.</string>
+    <string name="insights_footer_format">You softly paused &lt;b&gt;%1$d endless scroll loops&lt;/b&gt; this week. A gentle, steady rhythm.</string>
+
+    <string name="insights_nudges_title">Nudges Accepted</string>
+    <string name="insights_nudges_value">18 calm pauses</string>
+    <string name="insights_nudges_value_format">%1$d calm pauses</string>
+    <string name="insights_nudges_subtitle">Gentle stillness &amp; soft mist</string>
+    <string name="insights_nudges_pill">+3 vs last week</string>
+    <string name="insights_nudges_pill_format">%1$+d vs previous period</string>
+
+    <string name="insights_sleep_title">Sleep Drift</string>
+    <string name="insights_sleep_value">Average 10:45 PM</string>
+    <string name="insights_sleep_value_format">Average %1$s</string>
+    <string name="insights_sleep_no_data">No data yet</string>
+    <string name="insights_sleep_subtitle">Restful &amp; soft wind-down</string>
+    <string name="insights_sleep_pill">5 nights on target</string>
+    <string name="insights_sleep_pill_format">%1$d nights on target</string>
+
+    <string name="material_timepicker_am" tools:override="true">AM</string>
+    <string name="material_timepicker_pm" tools:override="true">PM</string>
+    <string name="material_timepicker_clock_mode_description" tools:override="true">Select AM or PM</string>
+</resources>

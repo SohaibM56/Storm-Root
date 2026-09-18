@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="primary">#436B5E</color>
+    <color name="secondary">#527A6C</color>
+    <color name="accent">#D97E52</color>
+    <color name="natural">#FAF8F5</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="text_primary">#2B2B28</color>
+    <color name="text_secondary">#8A8479</color>
+    <color name="border_subtle">#E6E1D8</color>
+    <color name="dot_inactive">#D8D3C7</color>
+
+    <color name="surface_blue_light">#E3EDF7</color>
+    <color name="surface_green_light">#E1F0E6</color>
+    <color name="surface_peach_light">#FBE6D8</color>
+    <color name="icon_blue">#3D7EBE</color>
+    <color name="moss_green">#5B8A4B</color>
+    <color name="text_navy">#33506B</color>
+    <color name="surface_gray_light">#f1f4fa</color>
+    <color name="surface_mint_light">#DCEEE3</color>
+    <color name="icon_gray">#4A4A46</color>
+
+    <color name="nav_active">#2B5347</color>
+    <color name="nav_inactive">#717975</color>
+
+    <color name="mist_gradient_start">#C7D3D8</color>
+    <color name="mist_gradient_end">#C9D8CB</color>
+
+    <color name="bedtime_warm_start">#F4B183</color>
+    <color name="bedtime_warm_end">#D97E52</color>
+
+</resources>

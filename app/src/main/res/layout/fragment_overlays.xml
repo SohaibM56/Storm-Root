@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/natural">
+
+        <!-- Atmosphere Preview -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/previewCard"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginHorizontal="@dimen/_20sdp"
+            android:layout_marginBottom="@dimen/_10sdp"
+            android:background="@drawable/bg_card_white"
+            android:padding="@dimen/_16sdp"
+            app:layout_constraintBottom_toTopOf="@id/previewOverlaysButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/previewIcon"
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_droplet"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/moss_green" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/previewTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:text="@string/preview_card_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_16ssp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@id/previewIcon"
+                app:layout_constraintEnd_toStartOf="@id/previewLivePill"
+                app:layout_constraintStart_toEndOf="@id/previewIcon"
+                app:layout_constraintTop_toTopOf="@id/previewIcon" />
+
+            <LinearLayout
+                android:id="@+id/previewLivePill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill_mint"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/_8sdp"
+                android:paddingVertical="@dimen/_5sdp"
+                app:layout_constraintBottom_toBottomOf="@id/previewIcon"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/previewIcon">
+
+                <View
+                    android:layout_width="@dimen/_5sdp"
+                    android:layout_height="@dimen/_5sdp"
+                    android:background="@drawable/dot_blue"
+                    android:backgroundTint="@color/nav_active" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_4sdp"
+                    android:text="@string/preview_card_live"
+                    android:textColor="@color/nav_active"
+                    android:textSize="@dimen/_10ssp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Effect tabs -->
+            <LinearLayout
+                android:id="@+id/effectTabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_14sdp"
+                android:background="@drawable/bg_segment_track"
+                android:baselineAligned="false"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:padding="@dimen/_4sdp"
+                app:layout_constraintTop_toBottomOf="@id/previewIcon">
+
+                <LinearLayout
+                    android:id="@+id/effectTabSoftMist"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabSoftMistIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_fog" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabSoftMistLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_soft_mist"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/effectTabCalmVines"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabCalmVinesIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_leaf" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabCalmVinesLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_calm_vines"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/effectTabWarmGlow"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabWarmGlowIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_storm" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabWarmGlowLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_warm_glow"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Atmosphere strength -->
+            <SeekBar
+                android:id="@+id/strengthSeekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:max="2"
+                android:paddingHorizontal="0dp"
+                android:progressBackgroundTint="@color/surface_gray_light"
+                android:progressTint="@color/primary"
+                android:thumbTint="@color/primary"
+                app:layout_constraintTop_toBottomOf="@id/effectTabs" />
+
+            <LinearLayout
+                android:id="@+id/strengthLabelsRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintTop_toBottomOf="@id/strengthSeekBar">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/strengthLabelSubtle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:gravity="start"
+                    android:text="@string/preview_strength_subtle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_11ssp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/strengthLabelBalanced"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="@string/preview_strength_balanced"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_11ssp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/strengthLabelDeep"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="@string/preview_strength_deep"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_11ssp" />
+
+            </LinearLayout>
+
+            <!-- Preview panel -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/previewPanel"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:minHeight="@dimen/_170sdp"
+                android:background="@drawable/bg_preview_gradient"
+                android:clipToOutline="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/strengthLabelsRow">
+
+                <FrameLayout
+                    android:id="@+id/previewFullscreenButton"
+                    android:layout_width="@dimen/_26sdp"
+                    android:layout_height="@dimen/_26sdp"
+                    android:layout_marginStart="@dimen/_12sdp"
+                    android:layout_marginTop="@dimen/_12sdp"
+                    android:background="@drawable/bg_circle_white_translucent"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <ImageView
+                        android:id="@+id/previewFullscreenIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/preview_fullscreen_cd"
+                        android:src="@drawable/ic_fullscreen"
+                        app:tint="@color/text_secondary" />
+                </FrameLayout>
+
+                <View
+                    android:layout_width="@dimen/_70sdp"
+                    android:layout_height="@dimen/_8sdp"
+                    android:layout_marginStart="@dimen/_8sdp"
+                    android:background="@drawable/bg_placeholder_bar"
+                    app:layout_constraintBottom_toBottomOf="@id/messageBadgeAnchor"
+                    app:layout_constraintStart_toEndOf="@id/messageBadgeAnchor"
+                    app:layout_constraintTop_toTopOf="@id/messageBadgeAnchor" />
+
+                <View
+                    android:id="@+id/messageBadgeAnchor"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/_26sdp"
+                    android:layout_marginStart="@dimen/_12sdp"
+                    android:layout_marginTop="@dimen/_12sdp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <View
+                    android:layout_width="@dimen/_40sdp"
+                    android:layout_height="@dimen/_8sdp"
+                    android:layout_marginEnd="@dimen/_12sdp"
+                    android:layout_marginTop="@dimen/_12sdp"
+                    android:background="@drawable/bg_placeholder_bar"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_pill_white"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_14sdp"
+                    android:paddingVertical="@dimen/_10sdp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <View
+                        android:layout_width="@dimen/_7sdp"
+                        android:layout_height="@dimen/_7sdp"
+                        android:background="@drawable/dot_blue"
+                        android:backgroundTint="@color/icon_blue" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/previewCaption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_8sdp"
+                        android:text="@string/preview_caption_soft_mist"
+                        android:textColor="@color/text_primary"
+                        android:textSize="@dimen/_12ssp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/_100sdp"
+                    android:layout_height="@dimen/_8sdp"
+                    android:layout_marginStart="@dimen/_12sdp"
+                    android:layout_marginBottom="@dimen/_12sdp"
+                    android:background="@drawable/bg_placeholder_bar"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <!-- Live effect layers, rendered in-app on top of the mock screen content
+                     above instead of as a system overlay over the real screen. -->
+                <com.hcr.stormroot.core.overlay.FogOverlayView
+                    android:id="@+id/previewFogView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.RootsOverlayView
+                    android:id="@+id/previewRootsView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <View
+                    android:id="@+id/previewWarmScrim"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:alpha="0"
+                    android:background="@drawable/bg_bedtime_warm_scrim"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.StormOverlayView
+                    android:id="@+id/previewStormView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/previewOverlaysButton"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_50sdp"
+            android:layout_marginHorizontal="@dimen/_20sdp"
+            android:layout_marginBottom="@dimen/_10sdp"
+            android:text="@string/overlays_preview_button"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14ssp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="@dimen/_10sdp"
+            app:icon="@drawable/ic_eye"
+            app:iconGravity="textStart"
+            app:iconPadding="@dimen/_8sdp"
+            app:iconTint="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

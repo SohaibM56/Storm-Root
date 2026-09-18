@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/natural">
+
+    <ImageView
+        android:id="@+id/back"
+        android:layout_width="@dimen/_24sdp"
+        android:layout_height="@dimen/_24sdp"
+        android:layout_marginStart="@dimen/_28sdp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_arrow_left"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@id/dotsIndicator"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dotsIndicator" />
+
+    <LinearLayout
+        android:id="@+id/dotsIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_20sdp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <View
+            android:id="@+id/dot1"
+            android:layout_width="@dimen/_10sdp"
+            android:layout_height="@dimen/_5sdp"
+            android:background="@drawable/dot_active" />
+
+        <View
+            android:id="@+id/dot2"
+            android:layout_width="@dimen/_5sdp"
+            android:layout_height="@dimen/_5sdp"
+            android:layout_marginStart="@dimen/_6sdp"
+            android:background="@drawable/dot_inactive" />
+
+        <View
+            android:id="@+id/dot3"
+            android:layout_width="@dimen/_5sdp"
+            android:layout_height="@dimen/_5sdp"
+            android:layout_marginStart="@dimen/_6sdp"
+            android:background="@drawable/dot_inactive" />
+    </LinearLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/skip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/_28sdp"
+        android:padding="@dimen/_4sdp"
+        android:text="@string/onboarding_skip"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/_13ssp"
+        app:layout_constraintBottom_toBottomOf="@id/dotsIndicator"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dotsIndicator" />
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:layout_marginTop="@dimen/_12sdp"
+        android:id="@+id/onboardingPager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dotsIndicator" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

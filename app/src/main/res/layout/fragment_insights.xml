@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/natural"
+    android:fillViewport="true"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/_20sdp"
+        android:paddingBottom="@dimen/_20sdp">
+
+        <!-- Day / Week / Month -->
+        <LinearLayout
+            android:id="@+id/periodTabsRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_segment_track"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
+            android:padding="@dimen/_4sdp">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/periodDay"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="@drawable/ripple_pill_mask"
+                android:gravity="center"
+                android:paddingVertical="@dimen/_8sdp"
+                android:text="@string/period_day"
+                android:textSize="@dimen/_12ssp" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/periodWeek"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="@drawable/ripple_pill_mask"
+                android:gravity="center"
+                android:paddingVertical="@dimen/_8sdp"
+                android:text="@string/period_week"
+                android:textSize="@dimen/_12ssp" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/periodMonth"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="@drawable/ripple_pill_mask"
+                android:gravity="center"
+                android:paddingVertical="@dimen/_8sdp"
+                android:text="@string/period_month"
+                android:textSize="@dimen/_12ssp" />
+
+        </LinearLayout>
+
+        <!-- Mindful Rhythm -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:background="@drawable/bg_card_gradient_mint"
+            android:padding="@dimen/_20sdp">
+
+            <ImageView
+                android:id="@+id/rhythmIcon"
+                android:layout_width="@dimen/_16sdp"
+                android:layout_height="@dimen/_16sdp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_leaf"
+                app:tint="@color/nav_active"
+                app:layout_constraintBottom_toBottomOf="@id/rhythmBadge"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/rhythmBadge" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/rhythmTag"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_6sdp"
+                android:letterSpacing="0.05"
+                android:text="@string/insights_mindful_tag"
+                android:textColor="@color/nav_active"
+                android:textSize="@dimen/_11ssp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@id/rhythmIcon"
+                app:layout_constraintEnd_toStartOf="@id/rhythmBadge"
+                app:layout_constraintStart_toEndOf="@id/rhythmIcon"
+                app:layout_constraintTop_toTopOf="@id/rhythmIcon" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/rhythmBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill_mint"
+                android:drawableStart="@drawable/ic_heart"
+                android:drawablePadding="@dimen/_4sdp"
+                android:drawableTint="@color/nav_active"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="@dimen/_10sdp"
+                android:paddingVertical="@dimen/_6sdp"
+                android:text="@string/insights_calmer_badge"
+                android:textColor="@color/nav_active"
+                android:textSize="@dimen/_11ssp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/rhythmHeaderBarrier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:barrierDirection="bottom"
+                app:constraint_referenced_ids="rhythmTag,rhythmBadge" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/rhythmTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_12sdp"
+                android:text="@string/insights_rest_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_20ssp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rhythmHeaderBarrier" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/rhythmSubtitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_6sdp"
+                android:text="@string/insights_rest_subtitle"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/_12ssp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rhythmTitle" />
+
+            <!-- Reclaimed time box -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/reclaimedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_12sdp"
+                android:background="@drawable/bg_pill_gray"
+                android:padding="@dimen/_14sdp"
+                app:layout_constraintTop_toBottomOf="@id/rhythmSubtitle">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/reclaimedLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.03"
+                    android:text="@string/insights_reclaimed_label"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_10ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintEnd_toStartOf="@id/reclaimedNote"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/reclaimedNote"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:text="@string/insights_reclaimed_note"
+                    android:textColor="@color/nav_active"
+                    android:textSize="@dimen/_11ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/reclaimedLabel"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/reclaimedValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_4sdp"
+                    android:text="@string/insights_reclaimed_value"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/_26ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/reclaimedLabel" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/reclaimedUnit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/insights_reclaimed_unit"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/_16ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/reclaimedValue" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/reclaimedSavedLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:lineSpacingExtra="-2sp"
+                    android:text="@string/insights_reclaimed_saved"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_10ssp"
+                    app:layout_constraintBottom_toBottomOf="@id/reclaimedUnit"
+                    app:layout_constraintEnd_toEndOf="@+id/reclaimedLabel"
+                    app:layout_constraintStart_toEndOf="@id/reclaimedUnit"
+                    app:layout_constraintTop_toBottomOf="@+id/reclaimedLabel" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Weekly rhythm -->
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/weeklyRhythmTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_16sdp"
+                android:text="@string/insights_weekly_rhythm_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_14ssp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@id/weeklyRhythmPeriod"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/reclaimedBox" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/weeklyRhythmPeriod"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/insights_weekly_rhythm_period"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/_12ssp"
+                app:layout_constraintBottom_toBottomOf="@id/weeklyRhythmTitle"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/weeklyRhythmTitle" />
+
+            <LinearLayout
+                android:id="@+id/weekDaysRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:orientation="horizontal"
+                android:weightSum="7"
+                app:layout_constraintTop_toBottomOf="@id/weeklyRhythmTitle" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/rhythmFooter"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_14sdp"
+                android:drawableStart="@drawable/ic_check_circle"
+                android:drawablePadding="@dimen/_8sdp"
+                android:gravity="center_vertical"
+                android:text="@string/insights_footer"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_11ssp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/weekDaysRow" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Nudges Accepted / Sleep Drift -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_white"
+                android:padding="@dimen/_16sdp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/nudgesTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/insights_nudges_title"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_12ssp"
+                    app:layout_constraintEnd_toStartOf="@id/nudgesIcon"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/nudgesIcon"
+                    android:layout_width="@dimen/_16sdp"
+                    android:layout_height="@dimen/_16sdp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_wind"
+                    app:tint="@color/nav_active"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/nudgesValue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:text="@string/insights_nudges_value"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/_17ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintTop_toBottomOf="@id/nudgesTitle" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/nudgesSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_4sdp"
+                    android:text="@string/insights_nudges_subtitle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_11ssp"
+                    app:layout_constraintTop_toBottomOf="@id/nudgesValue" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/nudgesPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:background="@drawable/bg_pill_mint"
+                    android:drawableStart="@drawable/ic_trend_up"
+                    android:drawablePadding="@dimen/_4sdp"
+                    android:drawableTint="@color/nav_active"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="@dimen/_10sdp"
+                    android:paddingVertical="@dimen/_5sdp"
+                    android:text="@string/insights_nudges_pill"
+                    android:textColor="@color/nav_active"
+                    android:textSize="@dimen/_10ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/nudgesSubtitle" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="@drawable/bg_card_white"
+                android:padding="@dimen/_16sdp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/sleepTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/insights_sleep_title"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_12ssp"
+                    app:layout_constraintEnd_toStartOf="@id/sleepDot"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <View
+                    android:id="@+id/sleepDot"
+                    android:layout_width="@dimen/_10sdp"
+                    android:layout_height="@dimen/_10sdp"
+                    android:background="@drawable/dot_blue"
+                    android:backgroundTint="@color/accent"
+                    app:layout_constraintBottom_toBottomOf="@id/sleepTitle"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/sleepTitle" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/sleepValue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:text="@string/insights_sleep_value"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/_17ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintTop_toBottomOf="@id/sleepTitle" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/sleepSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_4sdp"
+                    android:text="@string/insights_sleep_subtitle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_11ssp"
+                    app:layout_constraintTop_toBottomOf="@id/sleepValue" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/sleepPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:background="@drawable/bg_pill_peach"
+                    android:drawableStart="@drawable/ic_moon"
+                    android:drawablePadding="@dimen/_4sdp"
+                    android:drawableTint="@color/accent"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="@dimen/_10sdp"
+                    android:paddingVertical="@dimen/_5sdp"
+                    android:text="@string/insights_sleep_pill"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/_10ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/sleepSubtitle" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

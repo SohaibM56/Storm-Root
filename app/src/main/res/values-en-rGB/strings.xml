@@ -1,0 +1,5 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="material_timepicker_am" tools:override="true">AM</string>
+    <string name="material_timepicker_pm" tools:override="true">PM</string>
+    <string name="material_timepicker_clock_mode_description" tools:override="true">Select AM or PM</string>
+</resources>

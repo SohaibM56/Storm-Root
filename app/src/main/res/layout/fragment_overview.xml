@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/natural"
+    android:fillViewport="true"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/_20sdp"
+        android:paddingBottom="@dimen/_20sdp">
+
+        <!-- Mindful pace -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/mindfulCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card_gradient_mint"
+            android:padding="@dimen/_20sdp">
+
+            <View
+                android:id="@+id/mindfulDot"
+                android:layout_width="@dimen/_8sdp"
+                android:layout_height="@dimen/_8sdp"
+                android:background="@drawable/dot_blue"
+                android:backgroundTint="@color/nav_active"
+                app:layout_constraintBottom_toBottomOf="@id/mindfulTag"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/mindfulTag" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/mindfulTag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:letterSpacing="0.05"
+                android:text="@string/overview_mindful_tag"
+                android:textColor="@color/nav_active"
+                android:textSize="@dimen/_11ssp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toEndOf="@id/mindfulDot"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/mindfulGreeting"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:text="@string/overview_greeting"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_20ssp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@id/calmRing"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/mindfulTag" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:text="@string/overview_body"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/_12ssp"
+                app:layout_constraintEnd_toStartOf="@id/calmRing"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/mindfulGreeting" />
+
+            <LinearLayout
+                android:id="@+id/calmRing"
+                android:layout_width="@dimen/_70sdp"
+                android:layout_height="@dimen/_70sdp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_ring_calm"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/calmPercentValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/overview_calm_percent"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/_18ssp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/overview_calm_label"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_10ssp" />
+            </LinearLayout>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Friction applied / Wind-down -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/_6sdp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_card_white"
+                android:padding="@dimen/_16sdp">
+
+                <FrameLayout
+                    android:id="@+id/frictionIcon"
+                    android:layout_width="@dimen/_34sdp"
+                    android:layout_height="@dimen/_34sdp"
+                    android:background="@drawable/bg_circle_mint"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <ImageView
+                        android:layout_width="@dimen/_18sdp"
+                        android:layout_height="@dimen/_18sdp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_wind" />
+
+                </FrameLayout>
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_8sdp"
+                    android:maxLines="1"
+                    android:text="@string/overview_friction_label"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_10ssp"
+                    app:autoSizeMaxTextSize="@dimen/_10ssp"
+                    app:autoSizeMinTextSize="@dimen/_8ssp"
+                    app:autoSizeTextType="uniform"
+                    app:layout_constraintBottom_toBottomOf="@id/frictionIcon"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/frictionIcon"
+                    app:layout_constraintTop_toTopOf="@id/frictionIcon" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/frictionValue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_14sdp"
+                    android:text="@string/overview_friction_value"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/_16ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintTop_toBottomOf="@id/frictionIcon" />
+
+                <!--                <com.google.android.material.textview.MaterialTextView-->
+                <!--                    android:layout_width="wrap_content"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_marginTop="@dimen/_10sdp"-->
+                <!--                    android:background="@drawable/bg_pill_mint"-->
+                <!--                    android:drawableStart="@drawable/ic_trend_down"-->
+                <!--                    android:drawablePadding="@dimen/_4sdp"-->
+                <!--                    android:drawableTint="@color/nav_active"-->
+                <!--                    android:gravity="center_vertical"-->
+                <!--                    android:paddingHorizontal="@dimen/_10sdp"-->
+                <!--                    android:paddingVertical="@dimen/_5sdp"-->
+                <!--                    android:text="@string/overview_friction_pill"-->
+                <!--                    android:textColor="@color/nav_active"-->
+                <!--                    android:textSize="@dimen/_10ssp"-->
+                <!--                    android:textStyle="bold"-->
+                <!--                    app:layout_constraintTop_toBottomOf="@id/frictionValue" />-->
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_6sdp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_card_white"
+                android:padding="@dimen/_16sdp">
+
+                <FrameLayout
+                    android:id="@+id/windDownIcon"
+                    android:layout_width="@dimen/_34sdp"
+                    android:layout_height="@dimen/_34sdp"
+                    android:background="@drawable/bg_circle_peach"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <ImageView
+                        android:layout_width="@dimen/_18sdp"
+                        android:layout_height="@dimen/_18sdp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_moon" />
+
+                </FrameLayout>
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_8sdp"
+                    android:maxLines="1"
+                    android:text="@string/overview_wind_down_label"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_10ssp"
+                    app:autoSizeMaxTextSize="@dimen/_10ssp"
+                    app:autoSizeMinTextSize="@dimen/_8ssp"
+                    app:autoSizeTextType="uniform"
+                    app:layout_constraintBottom_toBottomOf="@id/windDownIcon"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/windDownIcon"
+                    app:layout_constraintTop_toTopOf="@id/windDownIcon" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/windDownValue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_14sdp"
+                    android:text="@string/overview_wind_down_value"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/_16ssp"
+                    android:textStyle="bold"
+                    app:layout_constraintTop_toBottomOf="@id/windDownIcon" />
+
+                <!--                <com.google.android.material.textview.MaterialTextView-->
+                <!--                    android:layout_width="wrap_content"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_marginTop="@dimen/_10sdp"-->
+                <!--                    android:background="@drawable/bg_pill_peach"-->
+                <!--                    android:drawableStart="@drawable/ic_sunset"-->
+                <!--                    android:drawablePadding="@dimen/_4sdp"-->
+                <!--                    android:drawableTint="@color/accent"-->
+                <!--                    android:gravity="center_vertical"-->
+                <!--                    android:paddingHorizontal="@dimen/_10sdp"-->
+                <!--                    android:paddingVertical="@dimen/_5sdp"-->
+                <!--                    android:text="@string/overview_wind_down_pill"-->
+                <!--                    android:textColor="@color/accent"-->
+                <!--                    android:textSize="@dimen/_10ssp"-->
+                <!--                    android:textStyle="bold"-->
+                <!--                    app:layout_constraintTop_toBottomOf="@id/windDownValue" />-->
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+
+        <!-- Active Anchors -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/overview_anchors_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_17ssp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/anchorsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill_mint"
+                android:paddingHorizontal="@dimen/_12sdp"
+                android:paddingVertical="@dimen/_5sdp"
+                android:text="@string/overview_anchors_count"
+                android:textColor="@color/nav_active"
+                android:textSize="@dimen/_11ssp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Sitting Roots -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:background="@drawable/bg_card_white"
+            android:padding="@dimen/_14sdp">
+
+            <FrameLayout
+                android:id="@+id/sittingRootsIcon"
+                android:layout_width="@dimen/_44sdp"
+                android:layout_height="@dimen/_44sdp"
+                android:background="@drawable/bg_icon_square_mint_sm"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="@dimen/_20sdp"
+                    android:layout_height="@dimen/_20sdp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_flower" />
+
+            </FrameLayout>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/materialTextView6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:text="@string/anchor_sitting_roots_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_14ssp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@+id/materialTextView5"
+                app:layout_constraintEnd_toStartOf="@id/sittingRootsSwitch"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@id/sittingRootsIcon"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/materialTextView5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:text="@string/anchor_sitting_roots_subtitle"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/_12ssp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/sittingRootsSwitch"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@id/sittingRootsIcon"
+                app:layout_constraintTop_toBottomOf="@+id/materialTextView6" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/sittingRootsSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:scaleX="0.8"
+                android:scaleY="0.8"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:thumbTint="@color/switch_thumb_green"
+                app:trackDecorationTint="@color/nav_active"
+                app:trackTint="@color/switch_track_green" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Doomscroll Mist -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:background="@drawable/bg_card_white"
+            android:padding="@dimen/_14sdp">
+
+            <FrameLayout
+                android:id="@+id/doomscrollMistIcon"
+                android:layout_width="@dimen/_44sdp"
+                android:layout_height="@dimen/_44sdp"
+                android:background="@drawable/bg_icon_square_mint_sm"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="@dimen/_20sdp"
+                    android:layout_height="@dimen/_20sdp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_dots_grid" />
+
+            </FrameLayout>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/materialTextView8"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:text="@string/anchor_doomscroll_mist_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_14ssp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@+id/materialTextView7"
+                app:layout_constraintEnd_toStartOf="@id/doomscrollMistSwitch"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@id/doomscrollMistIcon"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/materialTextView7"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:text="@string/anchor_doomscroll_mist_subtitle"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/_12ssp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/doomscrollMistSwitch"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@id/doomscrollMistIcon"
+                app:layout_constraintTop_toBottomOf="@+id/materialTextView8" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/doomscrollMistSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:scaleX="0.8"
+                android:scaleY="0.8"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:thumbTint="@color/switch_thumb_green"
+                app:trackDecorationTint="@color/nav_active"
+                app:trackTint="@color/switch_track_green" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Bedtime Drift -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:background="@drawable/bg_card_white"
+            android:padding="@dimen/_14sdp">
+
+            <FrameLayout
+                android:id="@+id/bedtimeDriftIcon"
+                android:layout_width="@dimen/_44sdp"
+                android:layout_height="@dimen/_44sdp"
+                android:background="@drawable/bg_icon_square_peach_sm"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="@dimen/_20sdp"
+                    android:layout_height="@dimen/_20sdp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_moon" />
+
+            </FrameLayout>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/materialTextView10"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:text="@string/anchor_bedtime_drift_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_14ssp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@+id/bedtimeDriftSubtitle"
+                app:layout_constraintEnd_toStartOf="@id/bedtimeDriftSwitch"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@id/bedtimeDriftIcon"
+                app:layout_constraintTop_toTopOf="@id/bedtimeDriftIcon"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/bedtimeDriftSubtitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:text="@string/anchor_bedtime_drift_subtitle"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/_12ssp"
+                app:layout_constraintBottom_toBottomOf="@id/bedtimeDriftIcon"
+                app:layout_constraintEnd_toStartOf="@id/bedtimeDriftSwitch"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@id/bedtimeDriftIcon"
+                app:layout_constraintTop_toBottomOf="@+id/materialTextView10" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/bedtimeDriftSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:scaleX="0.8"
+                android:scaleY="0.8"
+                app:layout_constraintBottom_toBottomOf="@id/bedtimeDriftIcon"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/bedtimeDriftIcon"
+                app:thumbTint="@color/switch_thumb_accent"
+                app:trackDecorationTint="@color/accent"
+                app:trackTint="@color/switch_track_accent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+
+</ScrollView>

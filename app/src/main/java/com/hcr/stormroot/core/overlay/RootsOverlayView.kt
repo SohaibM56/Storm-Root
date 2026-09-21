@@ -58,6 +58,11 @@ class RootsOverlayView @JvmOverloads constructor(
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
+    private val barkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+
     private val revealPath = Path()
     private val roots = mutableListOf<Root>()
 
@@ -79,6 +84,7 @@ class RootsOverlayView @JvmOverloads constructor(
         val leaves: List<Leaf>,
         val tendrils: List<Tendril>,
         val mossSpots: List<MossSpot>,
+        val barkRidges: List<BarkRidge>,
         val bounds: RectF,
         val depth: Int,
         val hueShift: Float,
@@ -99,6 +105,7 @@ class RootsOverlayView @JvmOverloads constructor(
     
     private data class Tendril(val path: Path, val measure: PathMeasure, val length: Float, val startDist: Float)
     private data class MossSpot(val distance: Float, val size: Float, val offset: Float)
+    private data class BarkRidge(val distance: Float, val side: Float, val lengthScale: Float, val skew: Float, val dark: Boolean)
 
     /** Shows the vines immediately at the current [growth] level — no growth ramp, no wind
      *  sway. Rendering is fully static once baked. */
@@ -239,6 +246,21 @@ class RootsOverlayView @JvmOverloads constructor(
 
         val leaves = generateLeaves(measure, random, scale)
 
+        // Bark ridges: short cross-grain ticks scattered along the whole stem, alternating
+        // light/dark, so the body reads as grooved wood rather than a flat colored tube.
+        val barkRidges = mutableListOf<BarkRidge>()
+        var barkDist = len * 0.02f
+        while (barkDist < len * 0.99f) {
+            barkRidges.add(BarkRidge(
+                distance = barkDist,
+                side = if (random.nextBoolean()) 1f else -1f,
+                lengthScale = 0.5f + random.nextFloat() * 0.7f,
+                skew = (random.nextFloat() - 0.5f) * 50f,
+                dark = random.nextFloat() < 0.6f
+            ))
+            barkDist += len * (0.015f + random.nextFloat() * 0.02f)
+        }
+
         val bounds = RectF()
         path.computeBounds(bounds, true)
         tendrils.forEach { t ->
@@ -252,7 +274,7 @@ class RootsOverlayView @JvmOverloads constructor(
         // Individual vines are thicker or thinner than their neighbors, like real plants —
         // not every stem in a cluster grows at the same rate.
         val thicknessScale = 0.75f + random.nextFloat() * 0.5f
-        return Root(path, measure, len, startGrowth, leaves, tendrils, mossSpots, bounds, depth, hueShift, thicknessScale)
+        return Root(path, measure, len, startGrowth, leaves, tendrils, mossSpots, barkRidges, bounds, depth, hueShift, thicknessScale)
     }
 
     private fun generateLeaves(measure: PathMeasure, random: Random, scale: Float): List<Leaf> {
@@ -335,9 +357,12 @@ class RootsOverlayView @JvmOverloads constructor(
 
             if (effectiveGrowth <= 0f) return@forEach
 
-            // Bake the vine into a bitmap once per growth bucket and reuse it — rendering is
-            // fully static, so a given bucket only needs to be drawn once, ever.
-            val bucket = (effectiveGrowth * 40).toInt()
+            // Bake the vine into a bitmap and reuse it until the tip has actually moved a
+            // visible amount — tying the bucket to on-screen pixels (rather than a fixed
+            // count across the whole 0..1 range) keeps long vines growing smoothly while
+            // still avoiding a re-bake every single frame.
+            val pxPerBucket = 1.5f * density
+            val bucket = (effectiveGrowth * root.length / pxPerBucket).toInt()
             if (root.cachedBitmap == null || root.cachedBucket != bucket) {
                 bakeRoot(root, effectiveGrowth, density)
                 root.cachedBucket = bucket
@@ -401,6 +426,27 @@ class RootsOverlayView @JvmOverloads constructor(
             paint.color = highlightColor
             paint.strokeWidth = (2f - 1f * eased) * density * root.thicknessScale
             bakeCanvas.drawPath(revealPath, paint)
+        }
+
+        // Pass 1.5: Bark grain — short cross-grain ticks scattered over the body so the
+        // stem reads as grooved wood rather than a flat colored tube.
+        val barkDark = jitterColor("#1B2C12".toColorInt(), root.hueShift)
+        val barkLight = jitterColor("#6B9950".toColorInt(), root.hueShift)
+        root.barkRidges.forEach { ridge ->
+            if (ridge.distance > distance) return@forEach
+            root.measure.getPosTan(ridge.distance, pos, tan)
+            val progress = (ridge.distance / root.length).coerceIn(0f, 1f)
+            val taperWidth = (6f - 4f * progress.pow(1.6f)) * density * root.thicknessScale
+            val ridgeLen = taperWidth * 1.1f * ridge.lengthScale
+            val tanAngle = atan2(tan[1], tan[0])
+            val normalAngle = tanAngle + Math.toRadians(90.0).toFloat() + Math.toRadians(ridge.skew.toDouble()).toFloat()
+            val dx = cos(normalAngle) * ridgeLen * ridge.side
+            val dy = sin(normalAngle) * ridgeLen * ridge.side
+
+            barkPaint.color = if (ridge.dark) barkDark else barkLight
+            barkPaint.strokeWidth = (if (ridge.dark) 0.9f else 0.6f) * density * root.thicknessScale
+            barkPaint.alpha = ((if (ridge.dark) 130 else 90) * effectiveGrowth * depthFade).toInt().coerceIn(0, 255)
+            bakeCanvas.drawLine(pos[0], pos[1], pos[0] + dx, pos[1] + dy, barkPaint)
         }
 
         // Growth-tip glow: a soft highlight at the actively growing tip while it's still

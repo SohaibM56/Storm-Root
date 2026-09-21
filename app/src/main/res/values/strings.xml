@@ -16,6 +16,18 @@
     <string name="dialog_bedtime_title">Bedtime</string>
     <string name="dialog_bedtime_subtitle">Choose when your wind-down window starts.</string>
 
+    <string name="dialog_overlay_label">Overlay</string>
+    <string name="dialog_overlay_help">Which ambient visual shows on screen once this nudge kicks in.</string>
+    <string name="dialog_sitting_ramp_help">How long you can keep sitting past the threshold before the vines reach full growth.</string>
+    <string name="dialog_doomscroll_ramp_help">How long past your daily limit before the mist reaches full storm.</string>
+    <string name="dialog_bedtime_drift_help">How long the wind-down dims and warms your screen before it settles.</string>
+    <string name="anchor_subtitle_with_overlay_format">%1$s · %2$s</string>
+    <string name="dialog_bedtime_am">AM</string>
+    <string name="dialog_bedtime_pm">PM</string>
+    <string name="dialog_sitting_ramp_label">Time to full growth</string>
+    <string name="dialog_doomscroll_ramp_label">Time to full storm</string>
+    <string name="dialog_bedtime_drift_label">Drift window</string>
+
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_1_title">A gentle pause, not a\nlockout.</string>
     <string name="onboarding_1_body">Storm Root breathes ambient mist and calming warmth onto your screen — giving your attention space to rest without friction or shame.</string>
@@ -129,9 +141,21 @@
     <string name="preview_tab_soft_mist">Fog Mist</string>
     <string name="preview_tab_calm_vines">Calm Vines</string>
     <string name="preview_tab_warm_glow">Storm Drift</string>
+    <string name="preview_tab_butterflies">Butterflies</string>
+    <string name="preview_tab_falling_leaves">Falling Leaves</string>
+    <string name="preview_tab_snowfall">Snowfall</string>
+    <string name="preview_tab_sun_rays">Sun Rays</string>
+    <string name="preview_tab_water_droplets">Water Droplets</string>
+    <string name="preview_tab_dew_web">Dew Web</string>
     <string name="preview_caption_soft_mist">Fog drifts over screens</string>
     <string name="preview_caption_calm_vines">Calm vines wrap around screen edges</string>
     <string name="preview_caption_warm_glow">Storm rolls in over screens</string>
+    <string name="preview_caption_butterflies">Butterflies fly gently over screens</string>
+    <string name="preview_caption_falling_leaves">Autumn leaves drift across screens</string>
+    <string name="preview_caption_snowfall">Soft snow falls gently over screens</string>
+    <string name="preview_caption_sun_rays">Sunlight filters softly over screens</string>
+    <string name="preview_caption_water_droplets">Droplets bead on screens like glass</string>
+    <string name="preview_caption_dew_web">Dew glistens on a web over screens</string>
     <string name="preview_strength_subtle">Subtle</string>
     <string name="preview_strength_balanced">Balanced</string>
     <string name="preview_strength_deep">Deep</string>

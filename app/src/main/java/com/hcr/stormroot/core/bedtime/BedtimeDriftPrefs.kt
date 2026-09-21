@@ -13,10 +13,12 @@ object BedtimeDriftPrefs {
     private const val KEY_DRIFT_WINDOW_MINUTES = "drift_window_minutes"
     private const val KEY_ENABLED = "enabled"
     private const val KEY_SNOOZED_UNTIL = "snoozed_until"
+    private const val KEY_OVERLAY_EFFECT = "overlay_effect"
 
     private const val DEFAULT_HOUR = 22
     private const val DEFAULT_MINUTE = 30
     const val DEFAULT_DRIFT_WINDOW_MINUTES = 90
+    const val DEFAULT_OVERLAY_EFFECT = "WARM_GLOW"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -42,6 +44,13 @@ object BedtimeDriftPrefs {
 
     fun setEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit { putBoolean(KEY_ENABLED, enabled) }
+    }
+
+    fun getOverlayEffect(context: Context): String =
+        prefs(context).getString(KEY_OVERLAY_EFFECT, DEFAULT_OVERLAY_EFFECT) ?: DEFAULT_OVERLAY_EFFECT
+
+    fun setOverlayEffect(context: Context, effect: String) {
+        prefs(context).edit { putString(KEY_OVERLAY_EFFECT, effect) }
     }
 
     fun getSnoozedUntil(context: Context): Long = prefs(context).getLong(KEY_SNOOZED_UNTIL, 0L)

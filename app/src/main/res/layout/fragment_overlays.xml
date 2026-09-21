@@ -75,29 +75,38 @@
             </LinearLayout>
 
             <!-- Effect tabs -->
-            <LinearLayout
-                android:id="@+id/effectTabs"
-                android:layout_width="match_parent"
+            <HorizontalScrollView
+                android:id="@+id/effectTabsScroll"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_14sdp"
+                android:clipToPadding="false"
+                android:scrollbars="none"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/previewIcon">
+
+            <LinearLayout
+                android:id="@+id/effectTabs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:background="@drawable/bg_segment_track"
                 android:baselineAligned="false"
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 android:orientation="horizontal"
-                android:padding="@dimen/_4sdp"
-                app:layout_constraintTop_toBottomOf="@id/previewIcon">
+                android:padding="@dimen/_4sdp">
 
                 <LinearLayout
                     android:id="@+id/effectTabSoftMist"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="@drawable/ripple_pill_mask"
                     android:gravity="center"
                     android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
                     android:paddingVertical="@dimen/_8sdp">
 
                     <ImageView
@@ -118,14 +127,14 @@
 
                 <LinearLayout
                     android:id="@+id/effectTabCalmVines"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="@drawable/ripple_pill_mask"
                     android:gravity="center"
                     android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
                     android:paddingVertical="@dimen/_8sdp">
 
                     <ImageView
@@ -146,14 +155,14 @@
 
                 <LinearLayout
                     android:id="@+id/effectTabWarmGlow"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="@drawable/ripple_pill_mask"
                     android:gravity="center"
                     android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
                     android:paddingVertical="@dimen/_8sdp">
 
                     <ImageView
@@ -172,7 +181,177 @@
                         android:textSize="@dimen/_11ssp" />
                 </LinearLayout>
 
+                <LinearLayout
+                    android:id="@+id/effectTabButterflies"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabButterfliesIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_flower" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabButterfliesLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_butterflies"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/effectTabFallingLeaves"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabFallingLeavesIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_leaf" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabFallingLeavesLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_falling_leaves"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/effectTabSnowfall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabSnowfallIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_snowflake" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabSnowfallLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_snowfall"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/effectTabSunRays"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabSunRaysIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_sun" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabSunRaysLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_sun_rays"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/effectTabWaterDroplets"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabWaterDropletsIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_droplet" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabWaterDropletsLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_water_droplets"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/effectTabDewWeb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabDewWebIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_web" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabDewWebLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_dew_web"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
             </LinearLayout>
+
+            </HorizontalScrollView>
 
             <!-- Atmosphere strength -->
             <SeekBar
@@ -185,7 +364,7 @@
                 android:progressBackgroundTint="@color/surface_gray_light"
                 android:progressTint="@color/primary"
                 android:thumbTint="@color/primary"
-                app:layout_constraintTop_toBottomOf="@id/effectTabs" />
+                app:layout_constraintTop_toBottomOf="@id/effectTabsScroll" />
 
             <LinearLayout
                 android:id="@+id/strengthLabelsRow"
@@ -364,6 +543,66 @@
 
                 <com.hcr.stormroot.core.overlay.StormOverlayView
                     android:id="@+id/previewStormView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.ButterflyOverlayView
+                    android:id="@+id/previewButterflyView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.LeavesOverlayView
+                    android:id="@+id/previewLeavesView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.SnowfallOverlayView
+                    android:id="@+id/previewSnowView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.SunRaysOverlayView
+                    android:id="@+id/previewSunRaysView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.WaterDropletsOverlayView
+                    android:id="@+id/previewDropletsView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.DewSpiderWebOverlayView
+                    android:id="@+id/previewDewWebView"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
                     android:visibility="gone"

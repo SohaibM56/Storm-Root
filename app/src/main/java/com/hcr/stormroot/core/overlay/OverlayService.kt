@@ -53,6 +53,12 @@ class OverlayService : Service() {
         const val EFFECT_SOFT_MIST = "SOFT_MIST"
         const val EFFECT_CALM_VINES = "CALM_VINES"
         const val EFFECT_WARM_GLOW = "WARM_GLOW"
+        const val EFFECT_BUTTERFLIES = "BUTTERFLIES"
+        const val EFFECT_FALLING_LEAVES = "FALLING_LEAVES"
+        const val EFFECT_SNOWFALL = "SNOWFALL"
+        const val EFFECT_SUN_RAYS = "SUN_RAYS"
+        const val EFFECT_WATER_DROPLETS = "WATER_DROPLETS"
+        const val EFFECT_DEW_WEB = "DEW_WEB"
 
         private const val EXTRA_EFFECT = "com.hcr.stormroot.overlay.extra.EFFECT"
         private const val EXTRA_STRENGTH_MULTIPLIER = "com.hcr.stormroot.overlay.extra.STRENGTH_MULTIPLIER"
@@ -122,13 +128,21 @@ class OverlayService : Service() {
     private var previewFogView: FogOverlayView? = null
     private var previewRootsView: RootsOverlayView? = null
     private var previewStormView: StormOverlayView? = null
+    private var previewButterflyView: ButterflyOverlayView? = null
+    private var previewLeavesView: LeavesOverlayView? = null
+    private var previewSnowView: SnowfallOverlayView? = null
+    private var previewSunRaysView: SunRaysOverlayView? = null
+    private var previewDropletsView: WaterDropletsOverlayView? = null
+    private var previewDewWebView: DewSpiderWebOverlayView? = null
 
-    private var doomscrollView: View? = null
-    private var doomscrollFog: FogOverlayView? = null
+    private var doomscrollEffectView: View? = null
+    private var doomscrollEffect: String? = null
 
-    private var rootsView: View? = null
-    private var rootsOverlayView: RootsOverlayView? = null
+    private var rootsEffectView: View? = null
+    private var rootsEffect: String? = null
+    private var rootsCurrentValue: Float = 0f
     private var rootsGrowthAnimator: ValueAnimator? = null
+    private var previewRootsGrowthAnimator: ValueAnimator? = null
     private var lastMovementMillis: Long = 0L
     private var sensorManager: SensorManager? = null
     private var movementSensorListener: SensorEventListener? = null
@@ -220,8 +234,22 @@ class OverlayService : Service() {
                 previewFogView = null
                 previewRootsView?.stop()
                 previewRootsView = null
+                previewRootsGrowthAnimator?.cancel()
+                previewRootsGrowthAnimator = null
                 previewStormView?.stop()
                 previewStormView = null
+                previewButterflyView?.stopAnimation()
+                previewButterflyView = null
+                previewLeavesView?.stopAnimation()
+                previewLeavesView = null
+                previewSnowView?.stopAnimation()
+                previewSnowView = null
+                previewSunRaysView?.stopAnimation()
+                previewSunRaysView = null
+                previewDropletsView?.stopAnimation()
+                previewDropletsView = null
+                previewDewWebView?.stopAnimation()
+                previewDewWebView = null
                 stopServiceIfIdle()
             }
             ACTION_START_FULLSCREEN_PREVIEW -> {
@@ -250,6 +278,18 @@ class OverlayService : Service() {
         previewRootsView = null
         previewStormView?.stop()
         previewStormView = null
+        previewButterflyView?.stopAnimation()
+        previewButterflyView = null
+        previewLeavesView?.stopAnimation()
+        previewLeavesView = null
+        previewSnowView?.stopAnimation()
+        previewSnowView = null
+        previewSunRaysView?.stopAnimation()
+        previewSunRaysView = null
+        previewDropletsView?.stopAnimation()
+        previewDropletsView = null
+        previewDewWebView?.stopAnimation()
+        previewDewWebView = null
         windowController.updateBlurBehind(0)
 
         val themedContext = ContextThemeWrapper(this, R.style.Theme_StormRoot)
@@ -263,19 +303,102 @@ class OverlayService : Service() {
                 fog.intensity = multiplier
                 previewFogView = fog
             }
+            EFFECT_BUTTERFLIES -> {
+                val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
+                windowController.setLayer(LAYER_PREVIEW, view)
+                val fog = view.findViewById<FogOverlayView>(R.id.fogView)
+                fog.visibility = View.GONE
+                
+                val butterflies = view.findViewById<ButterflyOverlayView>(R.id.butterflyView)
+                butterflies.visibility = View.VISIBLE
+                butterflies.intensity = multiplier
+                butterflies.startAnimation()
+                previewButterflyView = butterflies
+            }
+            EFFECT_FALLING_LEAVES -> {
+                val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
+                windowController.setLayer(LAYER_PREVIEW, view)
+                val fog = view.findViewById<FogOverlayView>(R.id.fogView)
+                fog.visibility = View.GONE
+                
+                val leaves = view.findViewById<LeavesOverlayView>(R.id.leavesView)
+                leaves.visibility = View.VISIBLE
+                leaves.intensity = multiplier
+                leaves.startAnimation()
+                previewLeavesView = leaves
+            }
+            EFFECT_SNOWFALL -> {
+                val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
+                windowController.setLayer(LAYER_PREVIEW, view)
+                val fog = view.findViewById<FogOverlayView>(R.id.fogView)
+                fog.visibility = View.GONE
+
+                val snow = view.findViewById<SnowfallOverlayView>(R.id.snowView)
+                snow.visibility = View.VISIBLE
+                snow.intensity = multiplier
+                snow.startAnimation()
+                previewSnowView = snow
+            }
+            EFFECT_SUN_RAYS -> {
+                val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
+                windowController.setLayer(LAYER_PREVIEW, view)
+                val fog = view.findViewById<FogOverlayView>(R.id.fogView)
+                fog.visibility = View.GONE
+
+                val sunRays = view.findViewById<SunRaysOverlayView>(R.id.sunRaysView)
+                sunRays.visibility = View.VISIBLE
+                sunRays.intensity = multiplier
+                sunRays.startAnimation()
+                previewSunRaysView = sunRays
+            }
+            EFFECT_WATER_DROPLETS -> {
+                val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
+                windowController.setLayer(LAYER_PREVIEW, view)
+                val fog = view.findViewById<FogOverlayView>(R.id.fogView)
+                fog.visibility = View.GONE
+
+                val droplets = view.findViewById<WaterDropletsOverlayView>(R.id.dropletsView)
+                droplets.visibility = View.VISIBLE
+                droplets.intensity = multiplier
+                droplets.startAnimation()
+                previewDropletsView = droplets
+            }
+            EFFECT_DEW_WEB -> {
+                val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
+                windowController.setLayer(LAYER_PREVIEW, view)
+                val fog = view.findViewById<FogOverlayView>(R.id.fogView)
+                fog.visibility = View.GONE
+
+                val dewWeb = view.findViewById<DewSpiderWebOverlayView>(R.id.dewWebView)
+                dewWeb.visibility = View.VISIBLE
+                dewWeb.intensity = multiplier
+                dewWeb.startAnimation()
+                previewDewWebView = dewWeb
+            }
             EFFECT_CALM_VINES -> {
                 val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_roots, null)
                 windowController.setLayer(LAYER_PREVIEW, view)
                 val roots = view.findViewById<RootsOverlayView>(R.id.rootsView)
                 roots.start()
-                roots.growth = 0.35f + 0.65f * multiplier
+                
+                previewRootsGrowthAnimator?.cancel()
+                val currentGrowth = roots.growth
+                val targetGrowth = 0.35f + 0.65f * multiplier
+                previewRootsGrowthAnimator = ValueAnimator.ofFloat(currentGrowth, targetGrowth).apply {
+                    duration = if (currentGrowth == 0f) 3500 else 1500
+                    interpolator = AccelerateDecelerateInterpolator()
+                    addUpdateListener { roots.growth = it.animatedValue as Float }
+                    start()
+                }
                 previewRootsView = roots
             }
             EFFECT_WARM_GLOW -> {
                 val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_bedtime, null)
                 windowController.setLayer(LAYER_PREVIEW, view)
                 val warmScrim = view.findViewById<View>(R.id.warmScrim)
-                val storm = view.findViewById<StormOverlayView>(R.id.stormView)
+                val decorativeContainer = view.findViewById<android.widget.FrameLayout>(R.id.decorativeContainer)
+                val storm = StormOverlayView(themedContext)
+                decorativeContainer.addView(storm)
 
                 warmScrim.alpha = 0.1f + 0.2f * multiplier
                 storm.start()
@@ -330,9 +453,23 @@ class OverlayService : Service() {
         previewFogView = null
         previewRootsView?.stop()
         previewRootsView = null
+        previewRootsGrowthAnimator?.cancel()
+        previewRootsGrowthAnimator = null
         previewStormView?.stop()
         previewStormView = null
-        doomscrollFog?.stop()
+        previewButterflyView?.stopAnimation()
+        previewButterflyView = null
+        previewLeavesView?.stopAnimation()
+        previewLeavesView = null
+        previewSnowView?.stopAnimation()
+        previewSnowView = null
+        previewSunRaysView?.stopAnimation()
+        previewSunRaysView = null
+        previewDropletsView?.stopAnimation()
+        previewDropletsView = null
+        previewDewWebView?.stopAnimation()
+        previewDewWebView = null
+        doomscrollEffectView?.let { stopEffectView(it) }
         rootsGrowthAnimator?.cancel()
         unregisterMovementSensor()
         flushNudgeSessions()
@@ -388,32 +525,39 @@ class OverlayService : Service() {
         val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_bedtime, null)
         val warmScrim = view.findViewById<View>(R.id.warmScrim)
         val vignetteScrim = view.findViewById<View>(R.id.vignetteScrim)
-        val storm = view.findViewById<StormOverlayView>(R.id.stormView)
-        storm.start()
+        val decorativeContainer = view.findViewById<android.widget.FrameLayout>(R.id.decorativeContainer)
+
+        // The warm dimming (scrim/vignette/blur) is bedtime's own staged progression and
+        // always applies; only the decorative particle layer underneath it is swappable —
+        // it defaults to the storm visual but can be any of the 9 overlay effects.
+        val decorativeView = createEffectView(themedContext, BedtimeDriftPrefs.getOverlayEffect(this))
+        decorativeContainer.addView(decorativeView)
+        startEffectView(decorativeView)
 
         val density = resources.displayMetrics.density
-        when (result.stage) {
+        val intensity = when (result.stage) {
             DriftStage.STAGE_1 -> {
                 val progress = result.overallProgress.coerceIn(0f, 1f)
                 warmScrim.alpha = 0.15f * progress
                 vignetteScrim.alpha = 0f
-                storm.intensity = 0.15f * progress
                 windowController.updateBlurBehind((4 * density).toInt())
+                0.15f * progress
             }
             DriftStage.STAGE_2 -> {
                 warmScrim.alpha = 0.15f + 0.10f * result.overallProgress
                 vignetteScrim.alpha = 0.2f * result.overallProgress
-                storm.intensity = 0.15f + 0.35f * result.overallProgress
                 windowController.updateBlurBehind((10 * density).toInt())
+                0.15f + 0.35f * result.overallProgress
             }
             DriftStage.STAGE_3 -> {
                 warmScrim.alpha = 0.25f + 0.10f * result.overallProgress
                 vignetteScrim.alpha = 0.2f + 0.20f * result.overallProgress
-                storm.intensity = 0.5f + 0.5f * result.overallProgress
                 windowController.updateBlurBehind((18 * density).toInt())
+                0.5f + 0.5f * result.overallProgress
             }
-            DriftStage.NONE -> Unit
+            DriftStage.NONE -> 0f
         }
+        setEffectValue(decorativeView, intensity)
 
         windowController.setLayer(LAYER_BEDTIME, view)
     }
@@ -435,40 +579,42 @@ class OverlayService : Service() {
         }
 
         val usedMinutes = UsageStatsHelper.todayUsageMinutes(this, targetPackages, DoomscrollPrefs.RESET_HOUR)
-        val result = DoomscrollEngine.calculate(usedMinutes, DoomscrollPrefs.getDailyLimitMinutes(this))
+        val result = DoomscrollEngine.calculate(
+            usedMinutes,
+            DoomscrollPrefs.getDailyLimitMinutes(this),
+            DoomscrollPrefs.getRampMinutes(this)
+        )
 
         if (result.stage == DoomscrollStage.NONE) {
             clearDoomscrollLayer()
             return
         }
 
-        if (doomscrollView == null) {
+        val effect = DoomscrollPrefs.getOverlayEffect(this)
+        if (doomscrollEffectView == null || doomscrollEffect != effect) {
+            doomscrollEffectView?.let { stopEffectView(it) }
             val themedContext = ContextThemeWrapper(this, R.style.Theme_StormRoot)
-            val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
-            doomscrollView = view
-            doomscrollFog = view.findViewById<FogOverlayView>(R.id.fogView).also { it.start() }
-            windowController.setLayer(LAYER_DOOMSCROLL, view)
+            val effectView = createEffectView(themedContext, effect)
+            startEffectView(effectView)
+            doomscrollEffectView = effectView
+            doomscrollEffect = effect
+            windowController.setLayer(LAYER_DOOMSCROLL, effectView)
             doomscrollNudgeStartMillis = System.currentTimeMillis()
         }
 
-        when (result.stage) {
-            DoomscrollStage.LIGHT_RAIN -> doomscrollFog?.intensity = 0.35f
-            DoomscrollStage.FOG -> doomscrollFog?.intensity = 0.65f
-            DoomscrollStage.STORM -> doomscrollFog?.intensity = 1f
-            DoomscrollStage.NONE -> Unit
-        }
+        setEffectValue(doomscrollEffectView ?: return, result.rampProgress)
     }
 
     private fun clearDoomscrollLayer() {
-        if (doomscrollView == null) return
+        if (doomscrollEffectView == null) return
         doomscrollNudgeStartMillis?.let { start ->
             StatsStore.recordNudgeSession(this, StatsStore.MODULE_DOOMSCROLL, start, System.currentTimeMillis())
         }
         doomscrollNudgeStartMillis = null
-        doomscrollFog?.stop()
+        doomscrollEffectView?.let { stopEffectView(it) }
         windowController.setLayer(LAYER_DOOMSCROLL, null)
-        doomscrollView = null
-        doomscrollFog = null
+        doomscrollEffectView = null
+        doomscrollEffect = null
     }
 
     private fun registerMovementSensor() {
@@ -533,7 +679,7 @@ class OverlayService : Service() {
         val targetGrowth = SittingRootsEngine.calculateGrowth(
             sedentaryMinutes = sedentaryMinutes,
             thresholdMinutes = SittingRootsPrefs.getSittingThresholdMinutes(this),
-            rampMinutes = SittingRootsPrefs.GROWTH_RAMP_MINUTES
+            rampMinutes = SittingRootsPrefs.getGrowthRampMinutes(this)
         )
 
         if (targetGrowth <= 0f) {
@@ -541,12 +687,17 @@ class OverlayService : Service() {
             return
         }
 
-        if (rootsView == null) {
+        val effect = SittingRootsPrefs.getOverlayEffect(this)
+        if (rootsEffectView == null || rootsEffect != effect) {
+            rootsGrowthAnimator?.cancel()
+            rootsEffectView?.let { stopEffectView(it) }
             val themedContext = ContextThemeWrapper(this, R.style.Theme_StormRoot)
-            val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_roots, null)
-            rootsView = view
-            rootsOverlayView = view.findViewById<RootsOverlayView>(R.id.rootsView).also { it.start() }
-            windowController.setLayer(LAYER_ROOTS, view)
+            val effectView = createEffectView(themedContext, effect)
+            startEffectView(effectView)
+            rootsCurrentValue = 0f
+            rootsEffectView = effectView
+            rootsEffect = effect
+            windowController.setLayer(LAYER_ROOTS, effectView)
             rootsNudgeStartMillis = System.currentTimeMillis()
         }
 
@@ -554,17 +705,20 @@ class OverlayService : Service() {
     }
 
     private fun retreatRootsIfShowing() {
-        val view = rootsOverlayView ?: return
-        if (view.growth <= 0f) return
+        val view = rootsEffectView ?: return
+        if (rootsCurrentValue <= 0f) return
         rootsNudgeStartMillis?.let { start ->
             StatsStore.recordNudgeSession(this, StatsStore.MODULE_ROOTS, start, System.currentTimeMillis())
         }
         rootsNudgeStartMillis = null
         rootsGrowthAnimator?.cancel()
-        rootsGrowthAnimator = ValueAnimator.ofFloat(view.growth, 0f).apply {
+        rootsGrowthAnimator = ValueAnimator.ofFloat(rootsCurrentValue, 0f).apply {
             duration = 1200
             interpolator = AccelerateDecelerateInterpolator()
-            addUpdateListener { view.growth = it.animatedValue as Float }
+            addUpdateListener {
+                rootsCurrentValue = it.animatedValue as Float
+                setEffectValue(view, rootsCurrentValue)
+            }
             addListener(object : android.animation.AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
                     clearRootsLayer()
@@ -575,27 +729,95 @@ class OverlayService : Service() {
     }
 
     private fun animateRootsGrowthTo(target: Float) {
-        val view = rootsOverlayView ?: return
+        val view = rootsEffectView ?: return
         rootsGrowthAnimator?.cancel()
-        rootsGrowthAnimator = ValueAnimator.ofFloat(view.growth, target).apply {
+        rootsGrowthAnimator = ValueAnimator.ofFloat(rootsCurrentValue, target).apply {
             duration = 3000
             interpolator = AccelerateDecelerateInterpolator()
-            addUpdateListener { view.growth = it.animatedValue as Float }
+            addUpdateListener {
+                rootsCurrentValue = it.animatedValue as Float
+                setEffectValue(view, rootsCurrentValue)
+            }
             start()
         }
     }
 
     private fun clearRootsLayer() {
-        if (rootsView == null) return
+        if (rootsEffectView == null) return
         rootsNudgeStartMillis?.let { start ->
             StatsStore.recordNudgeSession(this, StatsStore.MODULE_ROOTS, start, System.currentTimeMillis())
         }
         rootsNudgeStartMillis = null
         rootsGrowthAnimator?.cancel()
-        rootsOverlayView?.stop()
+        rootsEffectView?.let { stopEffectView(it) }
         windowController.setLayer(LAYER_ROOTS, null)
-        rootsView = null
-        rootsOverlayView = null
+        rootsEffectView = null
+        rootsEffect = null
+        rootsCurrentValue = 0f
+    }
+
+    /** Instantiates the view for a stored EFFECT_* choice, full-screen and ready to be
+     *  added to any FrameLayout — used by the sitting-roots/doomscroll/bedtime layers to
+     *  let each feature use whichever of the 9 overlay visuals the user picked. */
+    private fun createEffectView(themedContext: Context, effect: String): View {
+        val view = when (effect) {
+            EFFECT_CALM_VINES -> RootsOverlayView(themedContext)
+            EFFECT_WARM_GLOW -> StormOverlayView(themedContext)
+            EFFECT_BUTTERFLIES -> ButterflyOverlayView(themedContext)
+            EFFECT_FALLING_LEAVES -> LeavesOverlayView(themedContext)
+            EFFECT_SNOWFALL -> SnowfallOverlayView(themedContext)
+            EFFECT_SUN_RAYS -> SunRaysOverlayView(themedContext)
+            EFFECT_WATER_DROPLETS -> WaterDropletsOverlayView(themedContext)
+            EFFECT_DEW_WEB -> DewSpiderWebOverlayView(themedContext)
+            else -> FogOverlayView(themedContext)
+        }
+        view.layoutParams = android.widget.FrameLayout.LayoutParams(
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+        )
+        return view
+    }
+
+    private fun startEffectView(view: View) {
+        when (view) {
+            is RootsOverlayView -> view.start()
+            is FogOverlayView -> view.start()
+            is StormOverlayView -> view.start()
+            is ButterflyOverlayView -> view.startAnimation()
+            is LeavesOverlayView -> view.startAnimation()
+            is SnowfallOverlayView -> view.startAnimation()
+            is SunRaysOverlayView -> view.startAnimation()
+            is WaterDropletsOverlayView -> view.startAnimation()
+            is DewSpiderWebOverlayView -> view.startAnimation()
+        }
+    }
+
+    private fun stopEffectView(view: View) {
+        when (view) {
+            is RootsOverlayView -> view.stop()
+            is FogOverlayView -> view.stop()
+            is StormOverlayView -> view.stop()
+            is ButterflyOverlayView -> view.stopAnimation()
+            is LeavesOverlayView -> view.stopAnimation()
+            is SnowfallOverlayView -> view.stopAnimation()
+            is SunRaysOverlayView -> view.stopAnimation()
+            is WaterDropletsOverlayView -> view.stopAnimation()
+            is DewSpiderWebOverlayView -> view.stopAnimation()
+        }
+    }
+
+    private fun setEffectValue(view: View, value: Float) {
+        when (view) {
+            is RootsOverlayView -> view.growth = value
+            is FogOverlayView -> view.intensity = value
+            is StormOverlayView -> view.intensity = value
+            is ButterflyOverlayView -> view.intensity = value
+            is LeavesOverlayView -> view.intensity = value
+            is SnowfallOverlayView -> view.intensity = value
+            is SunRaysOverlayView -> view.intensity = value
+            is WaterDropletsOverlayView -> view.intensity = value
+            is DewSpiderWebOverlayView -> view.intensity = value
+        }
     }
 
     private fun buildNotification(): android.app.Notification {

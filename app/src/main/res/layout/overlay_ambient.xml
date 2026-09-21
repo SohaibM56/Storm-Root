@@ -8,4 +8,40 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <com.hcr.stormroot.core.overlay.ButterflyOverlayView
+        android:id="@+id/butterflyView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <com.hcr.stormroot.core.overlay.LeavesOverlayView
+        android:id="@+id/leavesView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <com.hcr.stormroot.core.overlay.SnowfallOverlayView
+        android:id="@+id/snowView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <com.hcr.stormroot.core.overlay.SunRaysOverlayView
+        android:id="@+id/sunRaysView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <com.hcr.stormroot.core.overlay.WaterDropletsOverlayView
+        android:id="@+id/dropletsView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <com.hcr.stormroot.core.overlay.DewSpiderWebOverlayView
+        android:id="@+id/dewWebView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
 </FrameLayout>

@@ -9,8 +9,8 @@
         android:alpha="0"
         android:background="@drawable/bg_bedtime_warm_scrim" />
 
-    <com.hcr.stormroot.core.overlay.StormOverlayView
-        android:id="@+id/stormView"
+    <FrameLayout
+        android:id="@+id/decorativeContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

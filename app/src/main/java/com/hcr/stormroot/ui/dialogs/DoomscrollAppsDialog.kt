@@ -1,33 +1,27 @@
 package com.hcr.stormroot.ui.dialogs
 
-import android.app.Dialog
 import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
-import android.view.Window
-import android.view.WindowManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.hcr.stormroot.R
 import com.hcr.stormroot.core.doomscroll.DoomscrollPrefs
 import com.hcr.stormroot.core.doomscroll.InstalledApp
 import com.hcr.stormroot.core.doomscroll.InstalledAppsHelper
 import com.hcr.stormroot.databinding.DialogDoomscrollAppsBinding
-import kotlin.math.abs
-import androidx.core.graphics.drawable.toDrawable
 
 object DoomscrollAppsDialog {
 
-    private val STEPS_MINUTES = (5..240 step 15).toList()
+    private val STEPS_MINUTES = 5..240 step 15
+    private val LIMIT_PRESETS = listOf(30, 60, 90, 120, 180)
+    private val RAMP_PRESETS = listOf(15, 30, 45, 60, 90)
 
     fun show(context: Context, onConfirmed: () -> Unit, onCancelled: () -> Unit = {}) {
         val binding = DialogDoomscrollAppsBinding.inflate(LayoutInflater.from(context))
-        val dialog = Dialog(context).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            setContentView(binding.root)
-            window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-        }
+        val dialog = BottomSheetDialog(context)
+        dialog.setContentView(binding.root)
 
         val selectedPackages = DoomscrollPrefs.getTargetPackages(context).toMutableSet()
         val adapter = InstalledAppsAdapter(selectedPackages)
@@ -35,28 +29,49 @@ object DoomscrollAppsDialog {
         binding.appsRecyclerView.adapter = adapter
         binding.appsRecyclerView.setHasFixedSize(true)
 
-        val currentLimit = DoomscrollPrefs.getDailyLimitMinutes(context)
-        binding.limitPicker.minValue = 0
-        binding.limitPicker.maxValue = STEPS_MINUTES.size - 1
-        binding.limitPicker.displayedValues = STEPS_MINUTES.map { "$it min" }.toTypedArray()
-        binding.limitPicker.wrapSelectorWheel = false
-        binding.limitPicker.value = STEPS_MINUTES.indices
-            .minByOrNull { abs(STEPS_MINUTES[it] - currentLimit) } ?: 0
+        binding.limitStepper.min = STEPS_MINUTES.first
+        binding.limitStepper.max = STEPS_MINUTES.last
+        binding.limitStepper.step = STEPS_MINUTES.step
+        binding.limitStepper.formatter = MinutesFormatter::format
+        binding.limitStepper.setPresets(LIMIT_PRESETS)
+        binding.limitStepper.value = DoomscrollPrefs.getDailyLimitMinutes(context)
+
+        OverlayEffectOptions.bind(binding.overlayChipGroup, DoomscrollPrefs.getOverlayEffect(context))
+
+        binding.rampStepper.min = 5
+        binding.rampStepper.max = 120
+        binding.rampStepper.step = 5
+        binding.rampStepper.formatter = MinutesFormatter::format
+        binding.rampStepper.setPresets(RAMP_PRESETS)
+        binding.rampStepper.value = DoomscrollPrefs.getRampMinutes(context)
 
         dialog.setOnCancelListener { onCancelled() }
         binding.cancelButton.setOnClickListener { dialog.cancel() }
         binding.saveButton.setOnClickListener {
             DoomscrollPrefs.setTargetPackages(context, selectedPackages)
-            DoomscrollPrefs.setDailyLimitMinutes(context, STEPS_MINUTES[binding.limitPicker.value])
+            DoomscrollPrefs.setDailyLimitMinutes(context, binding.limitStepper.value)
+            DoomscrollPrefs.setOverlayEffect(
+                context,
+                OverlayEffectOptions.selectedEffect(binding.overlayChipGroup, DoomscrollPrefs.DEFAULT_OVERLAY_EFFECT)
+            )
+            DoomscrollPrefs.setRampMinutes(context, binding.rampStepper.value)
             dialog.dismiss()
             onConfirmed()
         }
 
+        dialog.setOnShowListener {
+            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let { sheet ->
+                val behavior = BottomSheetBehavior.from(sheet)
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
+                sheet.layoutParams = sheet.layoutParams.apply {
+                    height = (context.resources.displayMetrics.heightPixels * 0.72f).toInt()
+                }
+                sheet.requestLayout()
+            }
+        }
         dialog.show()
-        dialog.window?.setLayout(
-            (context.resources.displayMetrics.widthPixels * 0.88f).toInt(),
-            WindowManager.LayoutParams.WRAP_CONTENT
-        )
 
         fun showApps(apps: List<InstalledApp>) {
             binding.appsLoading.visibility = View.GONE

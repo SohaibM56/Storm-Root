@@ -20,6 +20,7 @@ import com.hcr.stormroot.databinding.FragmentOverviewBinding
 import com.hcr.stormroot.ui.ModuleTitleFormatter
 import com.hcr.stormroot.ui.dialogs.BedtimeDialog
 import com.hcr.stormroot.ui.dialogs.DoomscrollAppsDialog
+import com.hcr.stormroot.ui.dialogs.OverlayEffectOptions
 import com.hcr.stormroot.ui.dialogs.SittingThresholdDialog
 
 class OverviewFragment : Fragment() {
@@ -97,10 +98,21 @@ class OverviewFragment : Fragment() {
             getString(R.string.anchor_sitting_roots_title),
             SittingRootsPrefs.getSittingThresholdMinutes(context)
         )
+        binding.materialTextView5.text = getString(
+            R.string.anchor_subtitle_with_overlay_format,
+            getString(R.string.anchor_sitting_roots_subtitle),
+            getString(OverlayEffectOptions.labelRes(SittingRootsPrefs.getOverlayEffect(context)))
+        )
+
         binding.materialTextView8.text = ModuleTitleFormatter.withMinutes(
             context,
             getString(R.string.anchor_doomscroll_mist_title),
             DoomscrollPrefs.getDailyLimitMinutes(context)
+        )
+        binding.materialTextView7.text = getString(
+            R.string.anchor_subtitle_with_overlay_format,
+            getString(R.string.anchor_doomscroll_mist_subtitle),
+            getString(OverlayEffectOptions.labelRes(DoomscrollPrefs.getOverlayEffect(context)))
         )
     }
 
@@ -121,9 +133,14 @@ class OverviewFragment : Fragment() {
     }
 
     private fun updateBedtimeDisplay() {
-        val formatted = BedtimeDriftPrefs.formattedBedtime(requireContext())
+        val context = requireContext()
+        val formatted = BedtimeDriftPrefs.formattedBedtime(context)
         binding.windDownValue.text = getString(R.string.overview_wind_down_value_format, formatted)
-        binding.bedtimeDriftSubtitle.text = getString(R.string.anchor_bedtime_drift_subtitle_format, formatted)
+        binding.bedtimeDriftSubtitle.text = getString(
+            R.string.anchor_subtitle_with_overlay_format,
+            getString(R.string.anchor_bedtime_drift_subtitle_format, formatted),
+            getString(OverlayEffectOptions.labelRes(BedtimeDriftPrefs.getOverlayEffect(context)))
+        )
     }
 
     private fun updateAnchorsCount() {

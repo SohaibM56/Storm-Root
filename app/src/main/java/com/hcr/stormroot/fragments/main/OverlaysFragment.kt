@@ -1,6 +1,7 @@
 package com.hcr.stormroot.fragments.main
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +19,7 @@ import com.hcr.stormroot.R
 import com.hcr.stormroot.core.overlay.OverlayService
 import com.hcr.stormroot.core.permissions.OverlayPermission
 import com.hcr.stormroot.databinding.FragmentOverlaysBinding
+import android.view.animation.DecelerateInterpolator
 
 class OverlaysFragment : Fragment() {
 
@@ -26,6 +28,7 @@ class OverlaysFragment : Fragment() {
     private var isFullscreenPreviewActive = false
     private var currentEffect = EffectTab.SOFT_MIST
     private var currentStrength = StrengthTab.BALANCED
+    private var rootsAnimator: ValueAnimator? = null
 
     private val overlaySettingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -42,7 +45,13 @@ class OverlaysFragment : Fragment() {
     private enum class EffectTab(val captionRes: Int, val serviceEffect: String) {
         SOFT_MIST(R.string.preview_caption_soft_mist, OverlayService.EFFECT_SOFT_MIST),
         CALM_VINES(R.string.preview_caption_calm_vines, OverlayService.EFFECT_CALM_VINES),
-        WARM_GLOW(R.string.preview_caption_warm_glow, OverlayService.EFFECT_WARM_GLOW)
+        WARM_GLOW(R.string.preview_caption_warm_glow, OverlayService.EFFECT_WARM_GLOW),
+        BUTTERFLIES(R.string.preview_caption_butterflies, OverlayService.EFFECT_BUTTERFLIES),
+        FALLING_LEAVES(R.string.preview_caption_falling_leaves, OverlayService.EFFECT_FALLING_LEAVES),
+        SNOWFALL(R.string.preview_caption_snowfall, OverlayService.EFFECT_SNOWFALL),
+        SUN_RAYS(R.string.preview_caption_sun_rays, OverlayService.EFFECT_SUN_RAYS),
+        WATER_DROPLETS(R.string.preview_caption_water_droplets, OverlayService.EFFECT_WATER_DROPLETS),
+        DEW_WEB(R.string.preview_caption_dew_web, OverlayService.EFFECT_DEW_WEB)
     }
 
     private enum class StrengthTab(val labelRes: Int, val multiplier: Float) {
@@ -67,10 +76,16 @@ class OverlaysFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val effectTabs = listOf(
+                val effectTabs = listOf(
             EffectTabViews(binding.effectTabSoftMist, binding.effectTabSoftMistIcon, binding.effectTabSoftMistLabel, EffectTab.SOFT_MIST),
             EffectTabViews(binding.effectTabCalmVines, binding.effectTabCalmVinesIcon, binding.effectTabCalmVinesLabel, EffectTab.CALM_VINES),
-            EffectTabViews(binding.effectTabWarmGlow, binding.effectTabWarmGlowIcon, binding.effectTabWarmGlowLabel, EffectTab.WARM_GLOW)
+            EffectTabViews(binding.effectTabWarmGlow, binding.effectTabWarmGlowIcon, binding.effectTabWarmGlowLabel, EffectTab.WARM_GLOW),
+            EffectTabViews(binding.effectTabButterflies, binding.effectTabButterfliesIcon, binding.effectTabButterfliesLabel, EffectTab.BUTTERFLIES),
+            EffectTabViews(binding.effectTabFallingLeaves, binding.effectTabFallingLeavesIcon, binding.effectTabFallingLeavesLabel, EffectTab.FALLING_LEAVES),
+            EffectTabViews(binding.effectTabSnowfall, binding.effectTabSnowfallIcon, binding.effectTabSnowfallLabel, EffectTab.SNOWFALL),
+            EffectTabViews(binding.effectTabSunRays, binding.effectTabSunRaysIcon, binding.effectTabSunRaysLabel, EffectTab.SUN_RAYS),
+            EffectTabViews(binding.effectTabWaterDroplets, binding.effectTabWaterDropletsIcon, binding.effectTabWaterDropletsLabel, EffectTab.WATER_DROPLETS),
+            EffectTabViews(binding.effectTabDewWeb, binding.effectTabDewWebIcon, binding.effectTabDewWebLabel, EffectTab.DEW_WEB)
         )
         effectTabs.forEach { views ->
             views.container.setOnClickListener { selectEffectTab(views.tab, effectTabs, animate = true) }
@@ -201,7 +216,18 @@ class OverlaysFragment : Fragment() {
             EffectTab.CALM_VINES -> {
                 binding.previewRootsView.visibility = View.VISIBLE
                 binding.previewRootsView.start()
-                binding.previewRootsView.growth = 0.35f + 0.65f * multiplier
+                
+                rootsAnimator?.cancel()
+                val currentGrowth = binding.previewRootsView.growth
+                val targetGrowth = 0.35f + 0.65f * multiplier
+                rootsAnimator = ValueAnimator.ofFloat(currentGrowth, targetGrowth).apply {
+                    duration = if (currentGrowth == 0f) 3500 else 1500
+                    interpolator = DecelerateInterpolator()
+                    addUpdateListener {
+                        binding.previewRootsView.growth = it.animatedValue as Float
+                    }
+                    start()
+                }
             }
             EffectTab.WARM_GLOW -> {
                 binding.previewWarmScrim.visibility = View.VISIBLE
@@ -209,6 +235,36 @@ class OverlaysFragment : Fragment() {
                 binding.previewWarmScrim.alpha = 0.1f + 0.2f * multiplier
                 binding.previewStormView.start()
                 binding.previewStormView.intensity = multiplier
+            }
+            EffectTab.BUTTERFLIES -> {
+                binding.previewButterflyView.visibility = View.VISIBLE
+                binding.previewButterflyView.intensity = multiplier
+                binding.previewButterflyView.startAnimation()
+            }
+            EffectTab.FALLING_LEAVES -> {
+                binding.previewLeavesView.visibility = View.VISIBLE
+                binding.previewLeavesView.intensity = multiplier
+                binding.previewLeavesView.startAnimation()
+            }
+            EffectTab.SNOWFALL -> {
+                binding.previewSnowView.visibility = View.VISIBLE
+                binding.previewSnowView.intensity = multiplier
+                binding.previewSnowView.startAnimation()
+            }
+            EffectTab.SUN_RAYS -> {
+                binding.previewSunRaysView.visibility = View.VISIBLE
+                binding.previewSunRaysView.intensity = multiplier
+                binding.previewSunRaysView.startAnimation()
+            }
+            EffectTab.WATER_DROPLETS -> {
+                binding.previewDropletsView.visibility = View.VISIBLE
+                binding.previewDropletsView.intensity = multiplier
+                binding.previewDropletsView.startAnimation()
+            }
+            EffectTab.DEW_WEB -> {
+                binding.previewDewWebView.visibility = View.VISIBLE
+                binding.previewDewWebView.intensity = multiplier
+                binding.previewDewWebView.startAnimation()
             }
         }
 
@@ -220,6 +276,9 @@ class OverlaysFragment : Fragment() {
     }
 
     private fun clearPreviewViews() {
+        rootsAnimator?.cancel()
+        rootsAnimator = null
+
         binding.previewFogView.stop()
         binding.previewFogView.visibility = View.GONE
 
@@ -231,6 +290,24 @@ class OverlaysFragment : Fragment() {
         binding.previewWarmScrim.alpha = 0f
         binding.previewStormView.stop()
         binding.previewStormView.visibility = View.GONE
+
+        binding.previewButterflyView.stopAnimation()
+        binding.previewButterflyView.visibility = View.GONE
+
+        binding.previewLeavesView.stopAnimation()
+        binding.previewLeavesView.visibility = View.GONE
+
+        binding.previewSnowView.stopAnimation()
+        binding.previewSnowView.visibility = View.GONE
+
+        binding.previewSunRaysView.stopAnimation()
+        binding.previewSunRaysView.visibility = View.GONE
+
+        binding.previewDropletsView.stopAnimation()
+        binding.previewDropletsView.visibility = View.GONE
+
+        binding.previewDewWebView.stopAnimation()
+        binding.previewDewWebView.visibility = View.GONE
     }
 
     private fun updatePreviewLivePill() {

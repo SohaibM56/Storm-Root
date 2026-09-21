@@ -8,9 +8,13 @@ object DoomscrollPrefs {
     private const val KEY_ENABLED = "enabled"
     private const val KEY_DAILY_LIMIT_MINUTES = "daily_limit_minutes"
     private const val KEY_TARGET_PACKAGES = "target_packages"
+    private const val KEY_OVERLAY_EFFECT = "overlay_effect"
+    private const val KEY_RAMP_MINUTES = "ramp_minutes"
 
     const val DEFAULT_DAILY_LIMIT_MINUTES = 60
     const val RESET_HOUR = 5
+    const val DEFAULT_OVERLAY_EFFECT = "SOFT_MIST"
+    const val DEFAULT_RAMP_MINUTES = 30
 
     val DEFAULT_TARGET_PACKAGES = setOf(
         "com.instagram.android",
@@ -45,5 +49,19 @@ object DoomscrollPrefs {
 
     fun setTargetPackages(context: Context, packages: Set<String>) {
         prefs(context).edit { putStringSet(KEY_TARGET_PACKAGES, packages) }
+    }
+
+    fun getOverlayEffect(context: Context): String =
+        prefs(context).getString(KEY_OVERLAY_EFFECT, DEFAULT_OVERLAY_EFFECT) ?: DEFAULT_OVERLAY_EFFECT
+
+    fun setOverlayEffect(context: Context, effect: String) {
+        prefs(context).edit { putString(KEY_OVERLAY_EFFECT, effect) }
+    }
+
+    fun getRampMinutes(context: Context): Int =
+        prefs(context).getInt(KEY_RAMP_MINUTES, DEFAULT_RAMP_MINUTES)
+
+    fun setRampMinutes(context: Context, minutes: Int) {
+        prefs(context).edit { putInt(KEY_RAMP_MINUTES, minutes) }
     }
 }

@@ -1,10 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Storm Root</string>
 
-    <!-- TEST IDs (Google's official sample IDs, always serve test ads/fill). Swap both for the
-         real IDs issued by your own AdMob console before any Play Store submission. -->
-    <string name="admob_app_id" translatable="false">ca-app-pub-3940256099942544~3347511713</string>
-    <string name="admob_rewarded_ad_unit_id" translatable="false">ca-app-pub-3940256099942544/5224354917</string>
+    <!-- Real AdMob App ID / rewarded ad unit ID, issued from this app's own AdMob console. -->
+    <string name="admob_app_id" translatable="false">ca-app-pub-9008446165886687~2011621018</string>
+    <string name="admob_rewarded_ad_unit_id" translatable="false">ca-app-pub-9008446165886687/2405452819</string>
 
     <string name="overlay_notification_title">Storm Root is active</string>
     <string name="overlay_notification_body">A gentle ambient layer is running in the background.</string>
@@ -219,6 +218,7 @@
     <string name="insights_weekly_rhythm_period">This week</string>
     <string name="insights_footer">You softly paused <b>18 endless scroll loops</b> this week. A gentle, steady rhythm.</string>
     <string name="insights_footer_format">You softly paused &lt;b&gt;%1$d endless scroll loops&lt;/b&gt; this week. A gentle, steady rhythm.</string>
+    <string name="insights_credit">@HCR Developers</string>
 
     <string name="insights_nudges_title">Nudges Accepted</string>
     <string name="insights_nudges_value">18 calm pauses</string>

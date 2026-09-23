@@ -82,8 +82,6 @@ class MainActivity : AppCompatActivity() {
             OverlayService.startRootsMonitor(this)
         }
 
-        // General-audience content rating for a calm/wellness app — set before initialize() so
-        // it applies to the very first ad request rather than only ones after this point.
         MobileAds.setRequestConfiguration(
             RequestConfiguration.Builder()
                 .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)

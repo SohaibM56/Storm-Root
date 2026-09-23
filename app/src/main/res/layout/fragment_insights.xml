@@ -424,6 +424,16 @@
 
         </LinearLayout>
 
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/insightsCredit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_16sdp"
+            android:gravity="center"
+            android:text="@string/insights_credit"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/_10ssp" />
+
     </LinearLayout>
 
 </ScrollView>

@@ -1,0 +1,20 @@
+# Custom Views inflated from XML (layout-referenced classes are auto-kept by AGP,
+# but the overlay views are also instantiated defensively here since some are
+# swapped at runtime by OverlayService via reflection-free but dynamic lookups).
+-keep class com.hcr.stormroot.core.overlay.** { *; }
+-keep class com.hcr.stormroot.ui.widgets.** { *; }
+
+# AdMob / Play Services Ads (library ships its own consumer rules; kept
+# defensively since ad failures are silent and hard to diagnose from a report).
+-keep class com.google.android.gms.ads.** { *; }
+-dontwarn com.google.android.gms.ads.**
+
+# WorkManager (pulled in transitively by Play Services Ads) uses a
+# Room-generated *_Impl database class that R8 full-mode strips by default,
+# crashing app startup with "Failed to create an instance of WorkDatabase".
+-keep class androidx.work.** { *; }
+-dontwarn androidx.work.**
+-keep class androidx.room.** { *; }
+-dontwarn androidx.room.**
+-keep class androidx.sqlite.** { *; }
+-dontwarn androidx.sqlite.**

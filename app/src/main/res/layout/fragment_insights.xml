@@ -221,7 +221,7 @@
                     app:layout_constraintBottom_toBottomOf="@id/reclaimedUnit"
                     app:layout_constraintEnd_toEndOf="@+id/reclaimedLabel"
                     app:layout_constraintStart_toEndOf="@id/reclaimedUnit"
-                    app:layout_constraintTop_toBottomOf="@+id/reclaimedLabel" />
+                    app:layout_constraintTop_toTopOf="@id/reclaimedUnit" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

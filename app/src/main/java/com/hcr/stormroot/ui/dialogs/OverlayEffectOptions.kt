@@ -1,5 +1,6 @@
 package com.hcr.stormroot.ui.dialogs
 
+import android.content.Context
 import android.content.res.ColorStateList
 import android.view.View
 import androidx.core.content.ContextCompat
@@ -7,10 +8,10 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.shape.CornerFamily
 import com.hcr.stormroot.R
+import com.hcr.stormroot.core.ads.EffectUnlockPrefs
 import com.hcr.stormroot.core.overlay.OverlayService
+import com.hcr.stormroot.ui.widgets.HorizontalOptionWheelView
 
-/** The 9 overlay visuals a nudge feature can be set to show, shared by the sitting-roots,
- *  doomscroll, and bedtime settings dialogs so each one doesn't redefine this list. */
 object OverlayEffectOptions {
 
     private data class Option(val effect: String, val labelRes: Int)
@@ -24,12 +25,10 @@ object OverlayEffectOptions {
         Option(OverlayService.EFFECT_SNOWFALL, R.string.preview_tab_snowfall),
         Option(OverlayService.EFFECT_SUN_RAYS, R.string.preview_tab_sun_rays),
         Option(OverlayService.EFFECT_WATER_DROPLETS, R.string.preview_tab_water_droplets),
-        Option(OverlayService.EFFECT_DEW_WEB, R.string.preview_tab_dew_web)
+        Option(OverlayService.EFFECT_DEW_WEB, R.string.preview_tab_dew_web),
+        Option(OverlayService.EFFECT_STARRY_NIGHT, R.string.preview_tab_starry_night)
     )
 
-    /** Populates [chipGroup] with one checkable chip per effect and checks [selected] —
-     *  styled with the app's own green palette instead of Material3's default purple,
-     *  which is otherwise unthemed (see themes.xml) and clashes with the rest of the UI. */
     fun bind(chipGroup: ChipGroup, selected: String) {
         chipGroup.removeAllViews()
         chipGroup.isSingleSelection = true
@@ -88,15 +87,37 @@ object OverlayEffectOptions {
         }
     }
 
-    /** Reads back whichever chip is currently checked in a group populated by [bind]. */
     fun selectedEffect(chipGroup: ChipGroup, fallback: String): String {
         val checkedId = chipGroup.checkedChipId
         if (checkedId == View.NO_ID) return fallback
         return chipGroup.findViewById<Chip>(checkedId)?.tag as? String ?: fallback
     }
 
-    /** The short display name for an EFFECT_* value, e.g. for showing which overlay a
-     *  nudge is currently set to on its Overview tile. */
     fun labelRes(effect: String): Int =
         ALL.firstOrNull { it.effect == effect }?.labelRes ?: R.string.preview_tab_soft_mist
+
+    fun bindWheel(wheel: HorizontalOptionWheelView, selected: String) {
+        val context = wheel.context
+        wheel.options = ALL.map {
+            HorizontalOptionWheelView.Option(
+                key = it.effect,
+                label = context.getString(it.labelRes),
+                locked = !EffectUnlockPrefs.isUnlocked(context, it.effect)
+            )
+        }
+        wheel.selectedKey = selected
+    }
+
+    fun isUnlocked(context: Context, effect: String): Boolean = EffectUnlockPrefs.isUnlocked(context, effect)
+
+    // A module's saved effect is only ever gated at the moment it's picked (the Save button) —
+    // nothing re-checks it afterward. Without this, a temporary 3-day unlock would keep rendering
+    // forever once saved, since OverlayService just reads the persisted value directly. Called
+    // from OverlayService wherever a module fetches its effect for actual rendering, so an expired
+    // unlock silently falls back to that module's own default (free) effect instead.
+    fun effectiveEffect(context: Context, savedEffect: String, fallback: String): String =
+        if (isUnlocked(context, savedEffect)) savedEffect else fallback
+
+    fun selectedEffect(wheel: HorizontalOptionWheelView, fallback: String): String =
+        wheel.selectedKey.ifEmpty { fallback }
 }

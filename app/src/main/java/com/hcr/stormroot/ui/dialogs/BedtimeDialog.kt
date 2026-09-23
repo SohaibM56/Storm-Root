@@ -1,8 +1,10 @@
 package com.hcr.stormroot.ui.dialogs
 
+import android.app.Activity
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
+import com.google.android.material.R
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.hcr.stormroot.core.bedtime.BedtimeDriftPrefs
@@ -18,8 +20,14 @@ object BedtimeDialog {
         val dialog = BottomSheetDialog(context)
         dialog.setContentView(binding.root)
 
-        val hour24 = BedtimeDriftPrefs.getBedtimeHour(context)
-        val minute = BedtimeDriftPrefs.getBedtimeMinute(context)
+        val storedHour24 = BedtimeDriftPrefs.getBedtimeHour(context)
+        val storedMinute = BedtimeDriftPrefs.getBedtimeMinute(context)
+        // The minute stepper only supports 5-minute increments. Round the saved time-of-day as a
+        // whole (not just the minute field in isolation) so a value like 23:58 correctly rolls
+        // into 00:00 instead of being silently clamped down to 23:55.
+        val roundedTotalMinutes = (((storedHour24 * 60 + storedMinute) + 2) / 5 * 5).mod(24 * 60)
+        val hour24 = roundedTotalMinutes / 60
+        val minute = roundedTotalMinutes % 60
         val isPm = hour24 >= 12
         val hour12 = when {
             hour24 == 0 -> 12
@@ -37,12 +45,12 @@ object BedtimeDialog {
         binding.minuteStepper.max = 55
         binding.minuteStepper.step = 5
         binding.minuteStepper.formatter = { String.format("%02d", it) }
-        binding.minuteStepper.value = ((minute + 2) / 5 * 5).coerceIn(0, 55)
+        binding.minuteStepper.value = minute
 
         binding.amChip.isChecked = !isPm
         binding.pmChip.isChecked = isPm
 
-        OverlayEffectOptions.bind(binding.overlayChipGroup, BedtimeDriftPrefs.getOverlayEffect(context))
+        OverlayEffectOptions.bindWheel(binding.overlayWheel, BedtimeDriftPrefs.getOverlayEffect(context))
 
         binding.driftWindowStepper.min = STEPS_DRIFT_MINUTES.first
         binding.driftWindowStepper.max = STEPS_DRIFT_MINUTES.last
@@ -51,36 +59,55 @@ object BedtimeDialog {
         binding.driftWindowStepper.setPresets(DRIFT_PRESETS)
         binding.driftWindowStepper.value = BedtimeDriftPrefs.getDriftWindowMinutes(context)
 
+        dialog.setCanceledOnTouchOutside(false)
         dialog.setOnCancelListener { onCancelled() }
         binding.cancelButton.setOnClickListener { dialog.cancel() }
+        binding.closeButton.setOnClickListener { dialog.cancel() }
         binding.saveButton.setOnClickListener {
-            val hour12Value = binding.hourStepper.value
-            val pm = binding.pmChip.isChecked
-            val hour24Value = when {
-                hour12Value == 12 && !pm -> 0
-                hour12Value == 12 && pm -> 12
-                pm -> hour12Value + 12
-                else -> hour12Value
+            val chosenEffect = OverlayEffectOptions.selectedEffect(binding.overlayWheel, BedtimeDriftPrefs.DEFAULT_OVERLAY_EFFECT)
+
+            fun performSave() {
+                val hour12Value = binding.hourStepper.value
+                val pm = binding.pmChip.isChecked
+                val hour24Value = when {
+                    hour12Value == 12 && !pm -> 0
+                    hour12Value == 12 && pm -> 12
+                    pm -> hour12Value + 12
+                    else -> hour12Value
+                }
+                BedtimeDriftPrefs.setBedtime(context, hour24Value, binding.minuteStepper.value)
+                BedtimeDriftPrefs.setOverlayEffect(context, chosenEffect)
+                BedtimeDriftPrefs.setDriftWindowMinutes(context, binding.driftWindowStepper.value)
+                dialog.dismiss()
+                onConfirmed()
             }
-            BedtimeDriftPrefs.setBedtime(context, hour24Value, binding.minuteStepper.value)
-            BedtimeDriftPrefs.setOverlayEffect(
-                context,
-                OverlayEffectOptions.selectedEffect(binding.overlayChipGroup, BedtimeDriftPrefs.DEFAULT_OVERLAY_EFFECT)
-            )
-            BedtimeDriftPrefs.setDriftWindowMinutes(context, binding.driftWindowStepper.value)
-            dialog.dismiss()
-            onConfirmed()
+
+            if (OverlayEffectOptions.isUnlocked(context, chosenEffect)) {
+                performSave()
+            } else {
+                val activity = context as? Activity ?: return@setOnClickListener
+                EffectUnlockFlow.show(activity, chosenEffect, onUnlocked = { performSave() })
+            }
         }
 
         dialog.setOnShowListener {
-            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            val bottomSheet = dialog.findViewById<View>(R.id.design_bottom_sheet)
             bottomSheet?.let { sheet ->
+                // Material's default bottomSheetStyle background (a gray/surface rounded shape)
+                // was peeking out from behind our own bg_bottom_sheet drawable at the top edge.
+                sheet.setBackgroundResource(android.R.color.transparent)
                 val behavior = BottomSheetBehavior.from(sheet)
+                // Measure the sheet's real attached parent instead of trusting
+                // displayMetrics.heightPixels, which doesn't reliably match the actual
+                // CoordinatorLayout height available here.
+                val parentHeight = (sheet.parent as? View)?.height ?: context.resources.displayMetrics.heightPixels
+                val targetHeight = ((parentHeight * 0.72f) + 80 * context.resources.displayMetrics.density).toInt()
+                    .coerceAtMost(parentHeight)
+                sheet.layoutParams = sheet.layoutParams.apply { height = targetHeight }
+                behavior.isFitToContents = true
                 behavior.state = BottomSheetBehavior.STATE_EXPANDED
                 behavior.skipCollapsed = true
-                sheet.layoutParams = sheet.layoutParams.apply {
-                    height = (context.resources.displayMetrics.heightPixels * 0.72f).toInt()
-                }
+                behavior.isDraggable = false
                 sheet.requestLayout()
             }
         }

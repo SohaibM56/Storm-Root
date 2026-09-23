@@ -10,9 +10,6 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.textview.MaterialTextView
 import com.hcr.stormroot.R
 
-/** A -/+ stepper with a bold live value and a row of one-tap preset chips underneath —
- *  used in place of the stock NumberPicker spinner, which looks visually out of place next
- *  to the rest of the app's pill/chip styling. */
 class NumberStepperView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
@@ -90,7 +87,6 @@ class NumberStepperView @JvmOverloads constructor(
         }
     }
 
-    /** Presets are absolute values (e.g. 15, 30, 45 minutes), not offsets. */
     fun setPresets(presets: List<Int>) {
         presetsScroll.visibility = if (presets.isEmpty()) View.GONE else View.VISIBLE
         presetsRow.removeAllViews()

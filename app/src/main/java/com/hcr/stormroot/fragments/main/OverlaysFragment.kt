@@ -40,7 +40,8 @@ class OverlaysFragment : Fragment() {
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* fullscreen preview still works without it, just without a visible notification */ }
+    ) {
+    }
 
     private enum class EffectTab(val captionRes: Int, val serviceEffect: String) {
         SOFT_MIST(R.string.preview_caption_soft_mist, OverlayService.EFFECT_SOFT_MIST),
@@ -51,7 +52,8 @@ class OverlaysFragment : Fragment() {
         SNOWFALL(R.string.preview_caption_snowfall, OverlayService.EFFECT_SNOWFALL),
         SUN_RAYS(R.string.preview_caption_sun_rays, OverlayService.EFFECT_SUN_RAYS),
         WATER_DROPLETS(R.string.preview_caption_water_droplets, OverlayService.EFFECT_WATER_DROPLETS),
-        DEW_WEB(R.string.preview_caption_dew_web, OverlayService.EFFECT_DEW_WEB)
+        DEW_WEB(R.string.preview_caption_dew_web, OverlayService.EFFECT_DEW_WEB),
+        STARRY_NIGHT(R.string.preview_caption_starry_night, OverlayService.EFFECT_STARRY_NIGHT)
     }
 
     private enum class StrengthTab(val labelRes: Int, val multiplier: Float) {
@@ -85,7 +87,8 @@ class OverlaysFragment : Fragment() {
             EffectTabViews(binding.effectTabSnowfall, binding.effectTabSnowfallIcon, binding.effectTabSnowfallLabel, EffectTab.SNOWFALL),
             EffectTabViews(binding.effectTabSunRays, binding.effectTabSunRaysIcon, binding.effectTabSunRaysLabel, EffectTab.SUN_RAYS),
             EffectTabViews(binding.effectTabWaterDroplets, binding.effectTabWaterDropletsIcon, binding.effectTabWaterDropletsLabel, EffectTab.WATER_DROPLETS),
-            EffectTabViews(binding.effectTabDewWeb, binding.effectTabDewWebIcon, binding.effectTabDewWebLabel, EffectTab.DEW_WEB)
+            EffectTabViews(binding.effectTabDewWeb, binding.effectTabDewWebIcon, binding.effectTabDewWebLabel, EffectTab.DEW_WEB),
+            EffectTabViews(binding.effectTabStarryNight, binding.effectTabStarryNightIcon, binding.effectTabStarryNightLabel, EffectTab.STARRY_NIGHT)
         )
         effectTabs.forEach { views ->
             views.container.setOnClickListener { selectEffectTab(views.tab, effectTabs, animate = true) }
@@ -119,9 +122,6 @@ class OverlaysFragment : Fragment() {
         super.onDestroyView()
     }
 
-    /** The main "Play/Stop Live Preview" button — the only thing that starts a preview
-     *  session from scratch. It always lands on the in-app panel; the fullscreen icon
-     *  (hidden until a session is active) is how you switch surfaces within that session. */
     private fun toggleMasterPreview() {
         if (isPreviewActive || isFullscreenPreviewActive) {
             stopAllPreviews()
@@ -145,9 +145,6 @@ class OverlaysFragment : Fragment() {
         updateFullscreenButtonVisibility()
     }
 
-    /** Only reachable once a preview session is already active (button is hidden otherwise).
-     *  Swaps which surface is showing the currently selected effect — panel or real screen —
-     *  it never starts a session on its own. */
     private fun toggleFullscreenMode() {
         if (isFullscreenPreviewActive) {
             OverlayService.stopFullscreenPreview(requireContext())
@@ -163,8 +160,6 @@ class OverlaysFragment : Fragment() {
     }
 
     private fun startFullscreenPreview() {
-        // Only one preview surface at a time — the real-screen overlay and the in-app
-        // panel would otherwise both render simultaneously.
         if (isPreviewActive) {
             clearPreviewViews()
             isPreviewActive = false
@@ -198,7 +193,6 @@ class OverlaysFragment : Fragment() {
     }
 
     private fun startPreview() {
-        // Only one preview surface at a time — see startFullscreenPreview().
         if (isFullscreenPreviewActive) {
             OverlayService.stopFullscreenPreview(requireContext())
             isFullscreenPreviewActive = false
@@ -266,6 +260,11 @@ class OverlaysFragment : Fragment() {
                 binding.previewDewWebView.intensity = multiplier
                 binding.previewDewWebView.startAnimation()
             }
+            EffectTab.STARRY_NIGHT -> {
+                binding.previewStarryNightView.visibility = View.VISIBLE
+                binding.previewStarryNightView.intensity = multiplier
+                binding.previewStarryNightView.startAnimation()
+            }
         }
 
         isPreviewActive = true
@@ -308,6 +307,9 @@ class OverlaysFragment : Fragment() {
 
         binding.previewDewWebView.stopAnimation()
         binding.previewDewWebView.visibility = View.GONE
+
+        binding.previewStarryNightView.stopAnimation()
+        binding.previewStarryNightView.visibility = View.GONE
     }
 
     private fun updatePreviewLivePill() {
@@ -325,6 +327,7 @@ class OverlaysFragment : Fragment() {
         }
         tabs.forEach { views ->
             val isSelected = views.tab == selected
+            views.container.isSelected = isSelected
             views.container.background = if (isSelected) {
                 requireContext().getDrawable(R.drawable.bg_pill_outline_green)
             } else {

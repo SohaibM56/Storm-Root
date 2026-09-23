@@ -198,7 +198,7 @@
                         android:layout_width="@dimen/_14sdp"
                         android:layout_height="@dimen/_14sdp"
                         android:contentDescription="@null"
-                        android:src="@drawable/ic_flower" />
+                        android:src="@drawable/ic_butterfly" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/effectTabButterfliesLabel"
@@ -346,6 +346,34 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/_4sdp"
                         android:text="@string/preview_tab_dew_web"
+                        android:textSize="@dimen/_11ssp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/effectTabStarryNight"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/ripple_pill_mask"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/_12sdp"
+                    android:paddingVertical="@dimen/_8sdp">
+
+                    <ImageView
+                        android:id="@+id/effectTabStarryNightIcon"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_star" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/effectTabStarryNightLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:text="@string/preview_tab_starry_night"
                         android:textSize="@dimen/_11ssp" />
                 </LinearLayout>
 
@@ -603,6 +631,16 @@
 
                 <com.hcr.stormroot.core.overlay.DewSpiderWebOverlayView
                     android:id="@+id/previewDewWebView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.hcr.stormroot.core.overlay.NightSkyOverlayView
+                    android:id="@+id/previewStarryNightView"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
                     android:visibility="gone"

@@ -10,6 +10,7 @@ object DoomscrollPrefs {
     private const val KEY_TARGET_PACKAGES = "target_packages"
     private const val KEY_OVERLAY_EFFECT = "overlay_effect"
     private const val KEY_RAMP_MINUTES = "ramp_minutes"
+    private const val KEY_SNOOZED_UNTIL = "snoozed_until"
 
     const val DEFAULT_DAILY_LIMIT_MINUTES = 60
     const val RESET_HOUR = 5
@@ -63,5 +64,12 @@ object DoomscrollPrefs {
 
     fun setRampMinutes(context: Context, minutes: Int) {
         prefs(context).edit { putInt(KEY_RAMP_MINUTES, minutes) }
+    }
+
+    fun getSnoozedUntil(context: Context): Long = prefs(context).getLong(KEY_SNOOZED_UNTIL, 0L)
+
+    fun snoozeFor(context: Context, minutes: Int) {
+        val until = System.currentTimeMillis() + minutes * 60_000L
+        prefs(context).edit { putLong(KEY_SNOOZED_UNTIL, until) }
     }
 }

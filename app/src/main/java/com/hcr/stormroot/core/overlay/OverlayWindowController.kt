@@ -15,6 +15,11 @@ class OverlayWindowController(private val context: Context) {
     private var rootView: FrameLayout? = null
     private var currentParams: WindowManager.LayoutParams? = null
 
+    // The main overlay window is FLAG_NOT_TOUCHABLE so nudge effects never block interaction
+    // with the app underneath — a small "Not now" control needs its own separate, touchable
+    // window instead of living inside that click-through layer.
+    private var snoozeRootView: FrameLayout? = null
+
     val isShowing: Boolean get() = rootView != null
 
     fun setLayer(tag: String, view: View?) {
@@ -30,6 +35,7 @@ class OverlayWindowController(private val context: Context) {
     }
 
     fun hide() {
+        hideSnoozeControl()
         val root = rootView ?: return
         windowManager.removeView(root)
         rootView = null
@@ -48,6 +54,40 @@ class OverlayWindowController(private val context: Context) {
             params.blurBehindRadius = 0
         }
         windowManager.updateViewLayout(root, params)
+    }
+
+    fun showSnoozeControl(view: View) {
+        val root = snoozeRootView ?: FrameLayout(context).also { newRoot ->
+            windowManager.addView(newRoot, buildSnoozeLayoutParams())
+            snoozeRootView = newRoot
+        }
+        root.removeAllViews()
+        root.addView(view)
+    }
+
+    fun hideSnoozeControl() {
+        val root = snoozeRootView ?: return
+        windowManager.removeView(root)
+        snoozeRootView = null
+    }
+
+    private fun buildSnoozeLayoutParams(): WindowManager.LayoutParams {
+        @Suppress("DEPRECATION")
+        val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+            WindowManager.LayoutParams.TYPE_PHONE
+        }
+        return WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            overlayType,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            y = (48 * context.resources.displayMetrics.density).toInt()
+        }
     }
 
     private fun ensureRoot(): FrameLayout {

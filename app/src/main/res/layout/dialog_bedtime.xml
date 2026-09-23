@@ -61,6 +61,19 @@
 
         </LinearLayout>
 
+        <ImageView
+            android:id="@+id/closeButton"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:background="@drawable/bg_icon_square_gray"
+            android:clickable="true"
+            android:contentDescription="@string/dialog_close"
+            android:focusable="true"
+            android:padding="@dimen/_7sdp"
+            android:src="@drawable/ic_close"
+            app:tint="@color/text_secondary" />
+
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -80,109 +93,209 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:background="@drawable/bg_dialog_section"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/_10sdp"
+                android:paddingTop="@dimen/_10sdp"
+                android:paddingEnd="@dimen/_10sdp"
+                android:paddingBottom="@dimen/_6sdp">
 
-                <com.hcr.stormroot.ui.widgets.NumberStepperView
-                    android:id="@+id/hourStepper"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <com.hcr.stormroot.ui.widgets.NumberStepperView
-                    android:id="@+id/minuteStepper"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/_10sdp"
-                    android:layout_weight="1" />
+                    <ImageView
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_clock"
+                        app:tint="@color/primary" />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/amPmChipGroup"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/_10sdp"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/amChip"
-                        style="@style/Widget.Material3.Chip.Filter"
+                    <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/dialog_bedtime_am" />
+                        android:layout_marginStart="@dimen/_6sdp"
+                        android:letterSpacing="0.05"
+                        android:text="@string/dialog_bedtime_time_label"
+                        android:textAllCaps="true"
+                        android:textColor="@color/primary"
+                        android:textSize="@dimen/_11ssp"
+                        android:textStyle="bold" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/pmChip"
-                        style="@style/Widget.Material3.Chip.Filter"
+                </LinearLayout>
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_2sdp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@string/dialog_bedtime_time_help"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_11ssp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_2sdp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <com.hcr.stormroot.ui.widgets.HorizontalWheelPickerView
+                        android:id="@+id/hourStepper"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/_120sdp"
+                        android:layout_weight="1"
+                        app:vertical="true" />
+
+                    <com.hcr.stormroot.ui.widgets.HorizontalWheelPickerView
+                        android:id="@+id/minuteStepper"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/_120sdp"
+                        android:layout_weight="1"
+                        app:vertical="true" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/amPmChipGroup"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/dialog_bedtime_pm" />
+                        android:layout_marginStart="@dimen/_6sdp"
+                        app:singleSelection="true">
 
-                </com.google.android.material.chip.ChipGroup>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/amChip"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checkable="true"
+                            android:text="@string/dialog_bedtime_am" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/pmChip"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checkable="true"
+                            android:text="@string/dialog_bedtime_pm" />
+
+                    </com.google.android.material.chip.ChipGroup>
+
+                </LinearLayout>
 
             </LinearLayout>
 
-            <com.google.android.material.textview.MaterialTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_24sdp"
-                android:letterSpacing="0.05"
-                android:text="@string/dialog_overlay_label"
-                android:textAllCaps="true"
-                android:textColor="@color/primary"
-                android:textSize="@dimen/_11ssp"
-                android:textStyle="bold" />
-
-            <com.google.android.material.textview.MaterialTextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_2sdp"
-                android:text="@string/dialog_overlay_help"
-                android:textColor="@color/text_secondary"
-                android:textSize="@dimen/_11ssp" />
+                android:layout_marginTop="@dimen/_6sdp"
+                android:background="@drawable/bg_dialog_section"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/_10sdp"
+                android:paddingTop="@dimen/_10sdp"
+                android:paddingEnd="@dimen/_10sdp"
+                android:paddingBottom="@dimen/_6sdp">
 
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_10sdp"
-                android:scrollbars="none">
-
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/overlayChipGroup"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:chipSpacingHorizontal="@dimen/_8sdp"
-                    app:singleLine="true"
-                    app:singleSelection="true" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-            </HorizontalScrollView>
+                    <ImageView
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_layers"
+                        app:tint="@color/primary" />
 
-            <com.google.android.material.textview.MaterialTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_24sdp"
-                android:letterSpacing="0.05"
-                android:text="@string/dialog_bedtime_drift_label"
-                android:textAllCaps="true"
-                android:textColor="@color/primary"
-                android:textSize="@dimen/_11ssp"
-                android:textStyle="bold" />
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_6sdp"
+                        android:letterSpacing="0.05"
+                        android:text="@string/dialog_overlay_label"
+                        android:textAllCaps="true"
+                        android:textColor="@color/primary"
+                        android:textSize="@dimen/_11ssp"
+                        android:textStyle="bold" />
 
-            <com.google.android.material.textview.MaterialTextView
+                </LinearLayout>
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_2sdp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@string/dialog_overlay_help"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_11ssp" />
+
+                <com.hcr.stormroot.ui.widgets.HorizontalOptionWheelView
+                    android:id="@+id/overlayWheel"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_56sdp"
+                    android:layout_marginTop="@dimen/_2sdp" />
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_2sdp"
-                android:text="@string/dialog_bedtime_drift_help"
-                android:textColor="@color/text_secondary"
-                android:textSize="@dimen/_11ssp" />
+                android:layout_marginTop="@dimen/_6sdp"
+                android:layout_marginBottom="@dimen/_10sdp"
+                android:background="@drawable/bg_dialog_section"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/_10sdp"
+                android:paddingTop="@dimen/_10sdp"
+                android:paddingEnd="@dimen/_10sdp"
+                android:paddingBottom="@dimen/_6sdp">
 
-            <com.hcr.stormroot.ui.widgets.NumberStepperView
-                android:id="@+id/driftWindowStepper"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_10sdp"
-                android:layout_marginBottom="@dimen/_16sdp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_wind"
+                        app:tint="@color/primary" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_6sdp"
+                        android:letterSpacing="0.05"
+                        android:text="@string/dialog_bedtime_drift_label"
+                        android:textAllCaps="true"
+                        android:textColor="@color/primary"
+                        android:textSize="@dimen/_11ssp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_2sdp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@string/dialog_bedtime_drift_help"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/_11ssp" />
+
+                <com.hcr.stormroot.ui.widgets.HorizontalWheelPickerView
+                    android:id="@+id/driftWindowStepper"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_56sdp"
+                    android:layout_marginTop="@dimen/_2sdp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

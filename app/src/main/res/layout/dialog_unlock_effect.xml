@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet"
+    android:orientation="vertical">
+
+    <View
+        android:layout_width="@dimen/_36sdp"
+        android:layout_height="@dimen/_4sdp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:background="@drawable/bg_drag_handle" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_20sdp"
+        android:paddingEnd="@dimen/_20sdp"
+        android:paddingBottom="@dimen/_8sdp">
+
+        <FrameLayout
+            android:layout_width="@dimen/_40sdp"
+            android:layout_height="@dimen/_40sdp"
+            android:background="@drawable/bg_icon_square_peach_sm">
+
+            <ImageView
+                android:id="@+id/unlockEffectIcon"
+                android:layout_width="@dimen/_18sdp"
+                android:layout_height="@dimen/_18sdp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_lock" />
+
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_12sdp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/unlockEffectTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/_16ssp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/unlockEffectSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_2sdp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/dialog_unlock_effect_subtitle"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/_12ssp" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/closeButton"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:background="@drawable/bg_icon_square_gray"
+            android:clickable="true"
+            android:contentDescription="@string/dialog_close"
+            android:focusable="true"
+            android:padding="@dimen/_7sdp"
+            android:src="@drawable/ic_close"
+            app:tint="@color/text_secondary" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_1sdp"
+        android:background="@color/border_subtle" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/_12sdp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancelButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_42sdp"
+            android:layout_weight="1"
+            android:text="@string/dialog_cancel"
+            android:textAllCaps="false"
+            android:textColor="@color/text_secondary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/watchAdButton"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_42sdp"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_weight="1"
+            android:text="@string/dialog_unlock_effect_watch_ad"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="@dimen/_10sdp" />
+
+    </LinearLayout>
+
+</LinearLayout>

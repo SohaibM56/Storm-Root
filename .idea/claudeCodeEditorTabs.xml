@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClaudeCodeEditorTabs">
+    <option name="activeSessionId" value="a201af34-39c1-4fcd-b3d4-166034b01e6d" />
+    <option name="openSessionIds">
+      <list>
+        <option value="66636092-e43f-4653-bc88-8d93d1c352db" />
+        <option value="a201af34-39c1-4fcd-b3d4-166034b01e6d" />
+      </list>
+    </option>
+    <option name="sessionPaths">
+      <map>
+        <entry key="66636092-e43f-4653-bc88-8d93d1c352db" value="/sessions/6723789a-3c3f-42c8-85ae-c81eb4b6eced" />
+        <entry key="a201af34-39c1-4fcd-b3d4-166034b01e6d" value="/sessions/637dfc97-67bc-496f-9d00-124f2e56c67b" />
+      </map>
+    </option>
+    <option name="sessionTitles">
+      <map>
+        <entry key="66636092-e43f-4653-bc88-8d93d1c352db" value="@app/src/main/res/layout/dialog_sitting_threshold." />
+        <entry key="a201af34-39c1-4fcd-b3d4-166034b01e6d" value="Analyze the code , suggest improvements in terms o" />
+      </map>
+    </option>
+  </component>
+</project>

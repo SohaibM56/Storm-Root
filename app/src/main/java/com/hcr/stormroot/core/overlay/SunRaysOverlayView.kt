@@ -17,12 +17,8 @@ import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.sin
 import kotlin.random.Random
+import androidx.core.graphics.withTranslation
 
-/**
- * Soft light beams filtering down from a fixed source with gentle atmospheric depth — a slow
- * sway per beam, a slow shimmer (as if leaves overhead are moving), and drifting dust motes that
- * catch the light.
- */
 class SunRaysOverlayView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
@@ -40,11 +36,54 @@ class SunRaysOverlayView @JvmOverloads constructor(
         var baseAlpha = 0
         var tintColor = Color.WHITE
 
-        fun init(index: Int, count: Int) {
-            // Beams spread from top-left towards the bottom-right
-            val spread = 45f
-            val centerAngle = 40f 
-            baseAngle = centerAngle - spread / 2f + (spread * index / (count - 1).coerceAtLeast(1)) + (Random.nextFloat() - 0.5f) * 6f
+        // Length/width fade shaders only depend on values fixed at init() (tintColor,
+        // bottomHalfWidth) plus beamLength (fixed until resize) — cache them instead of
+        // allocating 2 gradients + 1 ComposeShader per beam on every single frame.
+        private var cachedBeamLength = -1f
+        var composeShader: ComposeShader? = null
+
+        fun ensureShaders(beamLength: Float) {
+            if (cachedBeamLength == beamLength && composeShader != null) return
+            cachedBeamLength = beamLength
+            val r = Color.red(tintColor)
+            val g = Color.green(tintColor)
+            val b = Color.blue(tintColor)
+            // Holds near-full brightness for most of the beam's length instead of a straight
+            // linear fade — a plain 2-stop fade was already down to ~13% opacity by the time it
+            // reached the actual screen corner (the beam overshoots it by design), which made the
+            // rays look like they only existed right next to the source.
+            val lengthFade = LinearGradient(
+                0f, 0f, 0f, beamLength,
+                intArrayOf(
+                    Color.argb(255, r, g, b),
+                    Color.argb(230, r, g, b),
+                    Color.argb(120, r, g, b),
+                    Color.argb(0, r, g, b)
+                ),
+                floatArrayOf(0f, 0.75f, 0.92f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            val widthFade = LinearGradient(
+                -bottomHalfWidth, 0f, bottomHalfWidth, 0f,
+                intArrayOf(
+                    Color.TRANSPARENT,
+                    Color.argb(180, 255, 255, 255),
+                    Color.argb(255, 255, 255, 255),
+                    Color.argb(180, 255, 255, 255),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.35f, 0.5f, 0.65f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            composeShader = ComposeShader(lengthFade, widthFade, PorterDuff.Mode.MULTIPLY)
+        }
+
+        fun init(index: Int, count: Int, centerAngle: Float) {
+            // Tight fan around the true top-left-to-bottom-right corner angle (passed in, not a
+            // fixed 45° — a portrait screen's actual diagonal is closer to 20-25° from vertical)
+            // so the rays stay aimed at that corner instead of spreading toward the edges.
+            val spread = 22f
+            baseAngle = centerAngle - spread / 2f + (spread * index / (count - 1).coerceAtLeast(1)) + (Random.nextFloat() - 0.5f) * 4f
             swayPhase = Random.nextFloat() * Math.PI.toFloat() * 2f
             swaySpeed = 0.003f + Random.nextFloat() * 0.004f
             swayAmplitude = 2.5f + Random.nextFloat() * 2.5f
@@ -52,8 +91,7 @@ class SunRaysOverlayView @JvmOverloads constructor(
             shimmerSpeed = 0.006f + Random.nextFloat() * 0.01f
             topHalfWidth = 6f + Random.nextFloat() * 10f
             bottomHalfWidth = 90f + Random.nextFloat() * 140f
-            baseAlpha = 40 + Random.nextInt(35)
-            // Not every beam is the same warm-white — some lean golden, some cooler/paler.
+            baseAlpha = 90 + Random.nextInt(60)
             tintColor = Color.rgb(255, 244 + Random.nextInt(11), 210 + Random.nextInt(30))
         }
 
@@ -64,7 +102,7 @@ class SunRaysOverlayView @JvmOverloads constructor(
 
         fun currentAngle(): Float = baseAngle + sin(swayPhase.toDouble()).toFloat() * swayAmplitude
         fun shimmerFactor(): Float {
-            val normalized = (sin(shimmerPhase.toDouble()).toFloat() + 1f) / 2f // 0..1
+            val normalized = (sin(shimmerPhase.toDouble()).toFloat() + 1f) / 2f
             return 0.55f + 0.45f * normalized
         }
     }
@@ -98,52 +136,61 @@ class SunRaysOverlayView @JvmOverloads constructor(
         }
     }
 
-    /** A soft, drifting leaf/branch silhouette that dapples the beams — the "through trees" part. */
-    private class CanopyPatch {
-        var x = 0f
-        var y = 0f
-        var radiusX = 0f
-        var radiusY = 0f
-        var rotation = 0f
-        var alpha = 0
-        var swayPhase = 0f
-        var swaySpeed = 0f
-        var swayAmplitude = 0f
-
-        fun init(width: Int, height: Int) {
-            x = Random.nextFloat() * width
-            y = Random.nextFloat() * height * 0.6f
-            radiusX = 40f + Random.nextFloat() * 90f
-            radiusY = radiusX * (0.4f + Random.nextFloat() * 0.3f)
-            rotation = Random.nextFloat() * 360f
-            alpha = 26 + Random.nextInt(30)
-            swayPhase = Random.nextFloat() * Math.PI.toFloat() * 2f
-            swaySpeed = 0.0025f + Random.nextFloat() * 0.004f
-            swayAmplitude = 3f + Random.nextFloat() * 5f
-        }
-
-        fun update() {
-            swayPhase += swaySpeed
-        }
-
-        fun currentX(): Float = x + sin(swayPhase.toDouble()).toFloat() * swayAmplitude
-    }
-
     private val beams = ArrayList<Beam>()
     private val motes = ArrayList<DustMote>()
-    private val canopyPatches = ArrayList<CanopyPatch>()
     private val beamPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val motePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val canopyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = Color.rgb(35, 45, 22)
-    }
     private val beamPath = Path()
     private var isAnimating = false
 
-    /** Where the light source sits, as a fraction of view width/height (can be above the top edge). */
-    private var sourceXFraction = 0.05f
+    private var sourceXFraction = 0f
     private var sourceY = -100f
+    private var diagonalAngle = 45f
+
+    // Cached by radius bucket so onDraw doesn't allocate a RadialGradient per dust mote per frame.
+    private val moteGradients = HashMap<Int, RadialGradient>()
+
+    private fun moteGradientFor(radius: Float): RadialGradient {
+        val key = (radius * 4f).toInt()
+        return moteGradients.getOrPut(key) {
+            val r = key / 4f
+            RadialGradient(
+                0f, 0f, r * 2.2f,
+                intArrayOf(Color.WHITE, Color.argb(0, 255, 255, 255)),
+                floatArrayOf(0f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+    }
+
+    // Ambient glow only depends on source position, height, and intensity — rebuilt only when
+    // one of those actually changes instead of once per frame.
+    private var ambientGlowShader: RadialGradient? = null
+    private var ambientGlowKeyW = -1
+    private var ambientGlowKeyH = -1
+    private var ambientGlowKeyIntensity = -1f
+
+    private fun ambientGlowFor(sourceX: Float, h: Int): RadialGradient {
+        if (ambientGlowShader == null || ambientGlowKeyW != width || ambientGlowKeyH != h || ambientGlowKeyIntensity != intensity) {
+            ambientGlowKeyW = width
+            ambientGlowKeyH = h
+            ambientGlowKeyIntensity = intensity
+            // Reaches the full screen diagonal instead of stopping at 0.6h, so the ambient wash
+            // covers the whole view instead of just the area right around the source.
+            val glowRadius = kotlin.math.hypot(width.toFloat(), h.toFloat())
+            ambientGlowShader = RadialGradient(
+                sourceX, sourceY, glowRadius,
+                intArrayOf(
+                    Color.argb((70 * intensity).toInt(), 255, 245, 220),
+                    Color.argb((25 * intensity).toInt(), 255, 245, 220),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.45f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        return ambientGlowShader!!
+    }
 
     var intensity: Float = 0.7f
         set(value) {
@@ -151,7 +198,7 @@ class SunRaysOverlayView @JvmOverloads constructor(
             if (isAnimating) rebuildIfReady()
         }
 
-    private fun beamCount(): Int = (3 + (3 * intensity)).toInt()
+    private fun beamCount(): Int = (6 + (6 * intensity)).toInt()
     private fun moteCount(): Int = (18 + 50 * intensity).toInt()
 
     fun startAnimation() {
@@ -171,11 +218,18 @@ class SunRaysOverlayView @JvmOverloads constructor(
         val h = height
         if (w == 0 || h == 0 || !isAnimating) return
 
+        // canvas.rotate(+angle) sweeps the local "straight down" direction toward the LEFT, not
+        // the right (Android rotation is clockwise, and clockwise from 6 o'clock goes to 9, not
+        // 3) — so a NEGATIVE angle is what actually swings the beam from the top-left source
+        // toward the right, i.e. toward the bottom-right corner. On a portrait screen this
+        // magnitude is well under 45°, since height exceeds width.
+        diagonalAngle = -Math.toDegrees(atan2(w.toDouble(), h.toDouble())).toFloat()
+
         beams.clear()
         val count = beamCount()
         repeat(count) { i ->
             val b = Beam()
-            b.init(i, count)
+            b.init(i, count, diagonalAngle)
             beams.add(b)
         }
 
@@ -188,18 +242,11 @@ class SunRaysOverlayView @JvmOverloads constructor(
         while (motes.size > targetMotes) {
             motes.removeAt(motes.size - 1)
         }
-
-        canopyPatches.clear()
-        repeat(5 + (5 * intensity).toInt()) {
-            val patch = CanopyPatch()
-            patch.init(w, h)
-            canopyPatches.add(patch)
-        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        sourceY = -h * 0.05f
+        sourceY = 0f
         rebuildIfReady()
     }
 
@@ -208,9 +255,8 @@ class SunRaysOverlayView @JvmOverloads constructor(
         val w = width
         val h = height
         if (w > 0 && h > 0) {
-            for (i in 0 until beams.size) beams[i].update()
-            for (i in 0 until motes.size) motes[i].update(w, h)
-            for (i in 0 until canopyPatches.size) canopyPatches[i].update()
+            for (i in beams.indices) beams[i].update()
+            for (i in motes.indices) motes[i].update(w, h)
             invalidate()
         }
         Choreographer.getInstance().postFrameCallback(this)
@@ -223,84 +269,49 @@ class SunRaysOverlayView @JvmOverloads constructor(
         if (w == 0 || h == 0) return
 
         val sourceX = w * sourceXFraction
-        val beamLength = h * 1.35f
-
-        // 1. Source Bloom: A soft glow around the light source
-        motePaint.shader = RadialGradient(
-            sourceX, sourceY, h * 0.6f,
-            intArrayOf(Color.argb((60 * intensity).toInt(), 255, 245, 220), Color.TRANSPARENT),
-            null, Shader.TileMode.CLAMP
-        )
-        canvas.drawCircle(sourceX, sourceY, h * 0.6f, motePaint)
+        // Long enough to actually reach the bottom-right corner (the screen diagonal) instead of
+        // fading out well before it, plus margin so the fade-to-transparent tail isn't cut short.
+        val glowRadius = kotlin.math.hypot(w.toFloat(), h.toFloat())
+        val beamLength = glowRadius * 1.15f
+        motePaint.shader = ambientGlowFor(sourceX, h)
+        canvas.drawCircle(sourceX, sourceY, glowRadius, motePaint)
         motePaint.shader = null
 
-        for (i in 0 until beams.size) {
+        for (i in beams.indices) {
             val b = beams[i]
-            canvas.save()
-            canvas.translate(sourceX, sourceY)
-            canvas.rotate(b.currentAngle())
+            b.ensureShaders(beamLength)
+            canvas.withTranslation(sourceX, sourceY) {
+                rotate(b.currentAngle())
 
-            beamPath.reset()
-            beamPath.moveTo(-b.topHalfWidth, 0f)
-            beamPath.lineTo(b.topHalfWidth, 0f)
-            beamPath.lineTo(b.bottomHalfWidth, beamLength)
-            beamPath.lineTo(-b.bottomHalfWidth, beamLength)
-            beamPath.close()
+                beamPath.reset()
+                beamPath.moveTo(-b.topHalfWidth, 0f)
+                beamPath.lineTo(b.topHalfWidth, 0f)
+                beamPath.lineTo(b.bottomHalfWidth, beamLength)
+                beamPath.lineTo(-b.bottomHalfWidth, beamLength)
+                beamPath.close()
 
-            val lengthFade = LinearGradient(
-                0f, 0f, 0f, beamLength,
-                intArrayOf(
-                    Color.argb(255, Color.red(b.tintColor), Color.green(b.tintColor), Color.blue(b.tintColor)),
-                    Color.argb(0, Color.red(b.tintColor), Color.green(b.tintColor), Color.blue(b.tintColor))
-                ),
-                floatArrayOf(0f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            
-            // Volumetric "streaks": add more stops to the width fade to simulate air particulate
-            val widthFade = LinearGradient(
-                -b.bottomHalfWidth, 0f, b.bottomHalfWidth, 0f,
-                intArrayOf(Color.TRANSPARENT, Color.argb(180, 255, 255, 255), Color.argb(255, 255, 255, 255), Color.argb(180, 255, 255, 255), Color.TRANSPARENT),
-                floatArrayOf(0f, 0.35f, 0.5f, 0.65f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            beamPaint.shader = ComposeShader(lengthFade, widthFade, PorterDuff.Mode.MULTIPLY)
-            beamPaint.alpha = (b.baseAlpha * b.shimmerFactor()).toInt().coerceIn(0, 255)
-            canvas.drawPath(beamPath, beamPaint)
-            canvas.restore()
+                beamPaint.shader = b.composeShader
+                beamPaint.alpha = (b.baseAlpha * b.shimmerFactor()).toInt().coerceIn(0, 255)
+                drawPath(beamPath, beamPaint)
+            }
         }
         beamPaint.shader = null
 
-        // Leaf/branch silhouettes dappling the beams — the "filtering through trees" look.
-        for (i in 0 until canopyPatches.size) {
-            val p = canopyPatches[i]
-            canopyPaint.alpha = p.alpha
-            canvas.save()
-            canvas.translate(p.currentX(), p.y)
-            canvas.rotate(p.rotation)
-            canvas.drawOval(-p.radiusX, -p.radiusY, p.radiusX, p.radiusY, canopyPaint)
-            canvas.restore()
-        }
-
-        for (i in 0 until motes.size) {
+        for (i in motes.indices) {
             val m = motes[i]
             val twinkle = (sin(m.twinklePhase.toDouble()).toFloat() + 1f) / 2f
+
+            // Negated x-difference to match the beam's rotation convention (see diagonalAngle
+            // above) — otherwise this flags motes on the wrong side of the source as "in beam".
+            val angleToSource = Math.toDegrees(atan2(-(m.x - sourceX).toDouble(), (m.y - sourceY).toDouble())).toFloat()
             
-            // Selective Visibility: Motes "light up" when passing through beams.
-            // We approximate this by checking distance to the center of the beam array.
-            val angleToSource = Math.toDegrees(atan2((m.x - sourceX).toDouble(), (m.y - sourceY).toDouble())).toFloat()
-            
-            // Beams originate from top-left, so we check angles centered around ~40 degrees
-            val inBeamFactor = if (abs(angleToSource - 40f) < 28f) 1.6f else 0.3f
+            val inBeamFactor = if (abs(angleToSource - diagonalAngle) < 22f) 1.6f else 0.3f
             
             motePaint.alpha = (m.alpha * (0.4f + 0.6f * twinkle) * inBeamFactor).toInt().coerceIn(0, 255)
-            motePaint.shader = RadialGradient(
-                m.x, m.y, m.radius * 2.2f,
-                intArrayOf(Color.WHITE, Color.argb(0, 255, 255, 255)),
-                floatArrayOf(0f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawCircle(m.x, m.y, m.radius * 2.2f, motePaint)
+            motePaint.shader = moteGradientFor(m.radius)
+            canvas.withTranslation(m.x, m.y) {
+                drawCircle(0f, 0f, m.radius * 2.2f, motePaint)
+            }
         }
         motePaint.shader = null
     }

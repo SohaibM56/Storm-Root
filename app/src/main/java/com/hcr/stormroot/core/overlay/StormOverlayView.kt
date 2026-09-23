@@ -20,9 +20,6 @@ class StormOverlayView @JvmOverloads constructor(
             invalidate()
         }
 
-    // Thin, soft, desaturated blue-gray rather than a bright glowing white-blue — real rain
-    // doesn't emit light, it just catches a little of whatever's around it. Alpha and stroke
-    // width are set per depth layer just before each batched draw below.
     private val rainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.argb(255, 176, 190, 205)
         strokeCap = Paint.Cap.ROUND
@@ -50,9 +47,6 @@ class StormOverlayView @JvmOverloads constructor(
         val angleJitter: Float
     )
 
-    /** One depth plane of rain. [pts] is a preallocated, reused buffer (4 floats per drop —
-     *  x0,y0,x1,y1) so a whole layer draws in a single batched [Canvas.drawLines] call instead
-     *  of one [Canvas.drawLine] per drop, and no array is ever allocated mid-frame. */
     private class RainLayer(
         val drops: List<Drop>,
         val pts: FloatArray,
@@ -86,9 +80,6 @@ class StormOverlayView @JvmOverloads constructor(
     private fun randomizeStorm() {
         val random = Random(System.currentTimeMillis())
 
-        // Three depth planes: far rain is smaller, thinner and fainter; near rain is bigger,
-        // bolder and more visible — so the field reads as rain filling a 3D space instead of
-        // a flat layer of identical lines stuck to the screen.
         rainLayers = listOf(
             buildRainLayer(random, count = 110, strokeWidth = 1.0f, baseAlpha = 60, lengthScale = 0.6f),
             buildRainLayer(random, count = 65, strokeWidth = 1.5f, baseAlpha = 110, lengthScale = 0.9f),
@@ -112,12 +103,8 @@ class StormOverlayView @JvmOverloads constructor(
             Drop(
                 xSeed = random.nextFloat(),
                 ySeed = random.nextFloat(),
-                // Per-drop fall speed and length so no two drops read as identical, and the
-                // field never resets in a visible, synchronized pulse.
                 speedMult = 0.75f + random.nextFloat() * 0.6f,
                 lengthMult = 0.7f + random.nextFloat() * 0.7f,
-                // A little per-drop angle variance instead of every line falling at the exact
-                // same slant.
                 angleJitter = (random.nextFloat() - 0.5f) * 0.7f
             )
         }
@@ -130,7 +117,6 @@ class StormOverlayView @JvmOverloads constructor(
             return
         }
 
-        // Chance of lightning increases with intensity
         val chance = 0.005f * intensity
         if (random.nextFloat() < chance && lightningAlpha <= 0) {
             lightningAlpha = (100 + random.nextInt(100) * intensity).toInt().coerceIn(0, 255)
@@ -156,7 +142,6 @@ class StormOverlayView @JvmOverloads constructor(
         val h = height.toFloat()
         if (w == 0f || h == 0f) return
 
-        // Draw Storm Clouds at top
         if (intensity > 0f) {
             stormClouds.forEachIndexed { index, cloud ->
                 val cx = cloud.xSeed * w + sin(phase * 2f * Math.PI.toFloat() + index) * 20f
@@ -174,23 +159,18 @@ class StormOverlayView @JvmOverloads constructor(
             }
         }
 
-        // Draw Lightning flash
         if (lightningAlpha > 0) {
             lightningPaint.alpha = lightningAlpha
             canvas.drawRect(0f, 0f, w, h, lightningPaint)
         }
 
-        // Draw Rain — each depth layer is one batched drawLines() call (not one drawLine()
-        // per drop), which is the efficient way to push this many segments on Android; the
-        // per-drop buffers are reused every frame, never reallocated.
         if (intensity <= 0f) return
 
         val baseLength = h * 0.08f
         val windShift = w * 0.05f * intensity
 
         rainLayers.forEach { layer ->
-            // Thinning out visible drops at low intensity, rather than a hard on/off cut,
-            // keeps light rain reading as light rain instead of a sparse identical pattern.
+
             val visibleCount = (layer.drops.size * (0.35f + 0.65f * intensity)).toInt().coerceIn(0, layer.drops.size)
             if (visibleCount <= 0) return@forEach
 

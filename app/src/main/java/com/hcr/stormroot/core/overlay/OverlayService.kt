@@ -4,8 +4,10 @@ import android.animation.ValueAnimator
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -35,6 +37,9 @@ import com.hcr.stormroot.core.permissions.UsageAccessPermission
 import com.hcr.stormroot.core.sitting.SittingRootsEngine
 import com.hcr.stormroot.core.sitting.SittingRootsPrefs
 import com.hcr.stormroot.core.stats.StatsStore
+import com.hcr.stormroot.ui.dialogs.OverlayEffectOptions
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -59,12 +64,17 @@ class OverlayService : Service() {
         const val EFFECT_SUN_RAYS = "SUN_RAYS"
         const val EFFECT_WATER_DROPLETS = "WATER_DROPLETS"
         const val EFFECT_DEW_WEB = "DEW_WEB"
+        const val EFFECT_FIRE = "FIRE"
+        const val EFFECT_STARRY_NIGHT = "STARRY_NIGHT"
 
         private const val EXTRA_EFFECT = "com.hcr.stormroot.overlay.extra.EFFECT"
         private const val EXTRA_STRENGTH_MULTIPLIER = "com.hcr.stormroot.overlay.extra.STRENGTH_MULTIPLIER"
 
         private const val NOTIFICATION_CHANNEL_ID = "overlay_service"
         private const val NOTIFICATION_ID = 1001
+        private const val USAGE_ACCESS_WARNING_CHANNEL_ID = "usage_access_revoked"
+        private const val USAGE_ACCESS_WARNING_NOTIFICATION_ID = 1002
+        private const val SNOOZE_MINUTES = 15
         private const val LAYER_PREVIEW = "preview"
         private const val LAYER_BEDTIME = "bedtime"
         private const val LAYER_DOOMSCROLL = "doomscroll"
@@ -73,10 +83,11 @@ class OverlayService : Service() {
         private const val DOOMSCROLL_TICK_MS = 4_000L
         private const val ROOTS_TICK_MS = 60_000L
         private const val MOVEMENT_ACCEL_THRESHOLD = 2.2f
-
-        /** Shows [effect] as a real system overlay over whatever's on screen right now —
-         *  used by the Overlays tab's full-screen preview icon, distinct from the in-app
-         *  preview rendered inside previewPanel. */
+        // A single spike (a firm tap on the screen, a car bump) shouldn't reset the sedentary
+        // timer — require several consecutive over-threshold accelerometer samples within a
+        // short window before treating it as the user actually getting up and moving.
+        private const val MOVEMENT_CONSECUTIVE_SAMPLES_REQUIRED = 3
+        private const val MOVEMENT_SAMPLE_WINDOW_MS = 2_000L
         fun startFullscreenPreview(context: Context, effect: String, strengthMultiplier: Float) {
             if (!OverlayPermission.isGranted(context)) return
             val intent = Intent(context, OverlayService::class.java)
@@ -134,9 +145,23 @@ class OverlayService : Service() {
     private var previewSunRaysView: SunRaysOverlayView? = null
     private var previewDropletsView: WaterDropletsOverlayView? = null
     private var previewDewWebView: DewSpiderWebOverlayView? = null
+    private var previewFireView: FireOverlayView? = null
+    private var previewNightSkyView: NightSkyOverlayView? = null
 
     private var doomscrollEffectView: View? = null
     private var doomscrollEffect: String? = null
+    // UsageStatsManager queries (queryEvents over a 6h window, queryUsageStats) are genuinely
+    // slow system calls. Running them on the main-looper handler every 4s (DOOMSCROLL_TICK_MS)
+    // was blocking the main thread periodically, including UI taps in the host Activity since
+    // this service has no android:process isolation and shares the same main thread.
+    private val usageStatsExecutor = Executors.newSingleThreadExecutor()
+    private var isQueryingDoomscrollUsage = false
+    private var usageAccessRevokedNotified = false
+
+    // Tracked so screen-off pausing can stop its Choreographer loop like the other layers;
+    // bedtimeTick recreates this view fresh every tick regardless.
+    private var bedtimeEffectView: View? = null
+    private var screenStateReceiver: BroadcastReceiver? = null
 
     private var rootsEffectView: View? = null
     private var rootsEffect: String? = null
@@ -146,6 +171,8 @@ class OverlayService : Service() {
     private var lastMovementMillis: Long = 0L
     private var sensorManager: SensorManager? = null
     private var movementSensorListener: SensorEventListener? = null
+    private var consecutiveAccelSpikes = 0
+    private var firstAccelSpikeMillis: Long = 0L
 
     private var bedtimeNudgeStartMillis: Long? = null
     private var doomscrollNudgeStartMillis: Long? = null
@@ -175,6 +202,88 @@ class OverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         windowController = OverlayWindowController(this)
+        registerScreenStateReceiver()
+    }
+
+    private fun registerScreenStateReceiver() {
+        if (screenStateReceiver != null) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(receiverContext: Context, intent: Intent) {
+                when (intent.action) {
+                    Intent.ACTION_SCREEN_OFF -> pauseForScreenOff()
+                    Intent.ACTION_SCREEN_ON -> resumeForScreenOn()
+                }
+            }
+        }
+        screenStateReceiver = receiver
+        ContextCompat.registerReceiver(
+            this,
+            receiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_SCREEN_ON)
+            },
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    private fun unregisterScreenStateReceiver() {
+        screenStateReceiver?.let { runCatching { unregisterReceiver(it) } }
+        screenStateReceiver = null
+    }
+
+    // Nothing the user can see or act on while the screen is off: pause the periodic
+    // re-evaluation ticks and halt any running Choreographer-driven animations without tearing
+    // down layers or nudge-session bookkeeping, so everything resumes exactly where it left off.
+    private fun pauseForScreenOff() {
+        handler.removeCallbacks(bedtimeTick)
+        handler.removeCallbacks(doomscrollTick)
+        handler.removeCallbacks(rootsTick)
+
+        doomscrollEffectView?.let { stopEffectView(it) }
+        rootsEffectView?.let { stopEffectView(it) }
+        bedtimeEffectView?.let { stopEffectView(it) }
+        previewFogView?.stop()
+        previewRootsView?.stop()
+        previewStormView?.stop()
+        previewButterflyView?.stopAnimation()
+        previewLeavesView?.stopAnimation()
+        previewSnowView?.stopAnimation()
+        previewSunRaysView?.stopAnimation()
+        previewDropletsView?.stopAnimation()
+        previewDewWebView?.stopAnimation()
+        previewFireView?.stopAnimation()
+        previewNightSkyView?.stopAnimation()
+    }
+
+    private fun resumeForScreenOn() {
+        doomscrollEffectView?.let { startEffectView(it) }
+        rootsEffectView?.let { startEffectView(it) }
+        bedtimeEffectView?.let { startEffectView(it) }
+        previewFogView?.start()
+        previewRootsView?.start()
+        previewStormView?.start()
+        previewButterflyView?.startAnimation()
+        previewLeavesView?.startAnimation()
+        previewSnowView?.startAnimation()
+        previewSunRaysView?.startAnimation()
+        previewDropletsView?.startAnimation()
+        previewDewWebView?.startAnimation()
+        previewFireView?.startAnimation()
+        previewNightSkyView?.startAnimation()
+
+        if (isBedtimeMonitorActive) {
+            handler.removeCallbacks(bedtimeTick)
+            handler.post(bedtimeTick)
+        }
+        if (isDoomscrollMonitorActive) {
+            handler.removeCallbacks(doomscrollTick)
+            handler.post(doomscrollTick)
+        }
+        if (isRootsMonitorActive) {
+            handler.removeCallbacks(rootsTick)
+            handler.post(rootsTick)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -185,12 +294,7 @@ class OverlayService : Service() {
             ACTION_STOP_MONITOR -> {
                 isBedtimeMonitorActive = false
                 handler.removeCallbacks(bedtimeTick)
-                bedtimeNudgeStartMillis?.let { start ->
-                    StatsStore.recordNudgeSession(this, StatsStore.MODULE_BEDTIME, start, System.currentTimeMillis())
-                }
-                bedtimeNudgeStartMillis = null
-                windowController.setLayer(LAYER_BEDTIME, null)
-                windowController.updateBlurBehind(0)
+                clearBedtimeLayer()
                 stopServiceIfIdle()
             }
             ACTION_START_MONITOR -> {
@@ -250,6 +354,10 @@ class OverlayService : Service() {
                 previewDropletsView = null
                 previewDewWebView?.stopAnimation()
                 previewDewWebView = null
+                previewFireView?.stopAnimation()
+                previewFireView = null
+                previewNightSkyView?.stopAnimation()
+                previewNightSkyView = null
                 stopServiceIfIdle()
             }
             ACTION_START_FULLSCREEN_PREVIEW -> {
@@ -290,6 +398,10 @@ class OverlayService : Service() {
         previewDropletsView = null
         previewDewWebView?.stopAnimation()
         previewDewWebView = null
+        previewFireView?.stopAnimation()
+        previewFireView = null
+        previewNightSkyView?.stopAnimation()
+        previewNightSkyView = null
         windowController.updateBlurBehind(0)
 
         val themedContext = ContextThemeWrapper(this, R.style.Theme_StormRoot)
@@ -375,6 +487,30 @@ class OverlayService : Service() {
                 dewWeb.startAnimation()
                 previewDewWebView = dewWeb
             }
+            EFFECT_FIRE -> {
+                val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
+                windowController.setLayer(LAYER_PREVIEW, view)
+                val fog = view.findViewById<FogOverlayView>(R.id.fogView)
+                fog.visibility = View.GONE
+
+                val fire = view.findViewById<FireOverlayView>(R.id.fireView)
+                fire.visibility = View.VISIBLE
+                fire.intensity = multiplier
+                fire.startAnimation()
+                previewFireView = fire
+            }
+            EFFECT_STARRY_NIGHT -> {
+                val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_ambient, null)
+                windowController.setLayer(LAYER_PREVIEW, view)
+                val fog = view.findViewById<FogOverlayView>(R.id.fogView)
+                fog.visibility = View.GONE
+
+                val nightSky = view.findViewById<NightSkyOverlayView>(R.id.nightSkyView)
+                nightSky.visibility = View.VISIBLE
+                nightSky.intensity = multiplier
+                nightSky.startAnimation()
+                previewNightSkyView = nightSky
+            }
             EFFECT_CALM_VINES -> {
                 val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_roots, null)
                 windowController.setLayer(LAYER_PREVIEW, view)
@@ -446,6 +582,8 @@ class OverlayService : Service() {
     }
 
     override fun onDestroy() {
+        unregisterScreenStateReceiver()
+        usageStatsExecutor.shutdown()
         handler.removeCallbacks(bedtimeTick)
         handler.removeCallbacks(doomscrollTick)
         handler.removeCallbacks(rootsTick)
@@ -469,7 +607,12 @@ class OverlayService : Service() {
         previewDropletsView = null
         previewDewWebView?.stopAnimation()
         previewDewWebView = null
+        previewFireView?.stopAnimation()
+        previewFireView = null
+        previewNightSkyView?.stopAnimation()
+        previewNightSkyView = null
         doomscrollEffectView?.let { stopEffectView(it) }
+        bedtimeEffectView = null
         rootsGrowthAnimator?.cancel()
         unregisterMovementSensor()
         flushNudgeSessions()
@@ -509,16 +652,17 @@ class OverlayService : Service() {
         )
 
         if (result.stage == DriftStage.NONE) {
-            bedtimeNudgeStartMillis?.let { start ->
-                StatsStore.recordNudgeSession(this, StatsStore.MODULE_BEDTIME, start, System.currentTimeMillis())
-            }
-            bedtimeNudgeStartMillis = null
-            windowController.setLayer(LAYER_BEDTIME, null)
-            windowController.updateBlurBehind(0)
+            clearBedtimeLayer()
             return
         }
+        val effect = OverlayEffectOptions.effectiveEffect(
+            this,
+            BedtimeDriftPrefs.getOverlayEffect(this),
+            BedtimeDriftPrefs.DEFAULT_OVERLAY_EFFECT
+        )
         if (bedtimeNudgeStartMillis == null) {
             bedtimeNudgeStartMillis = System.currentTimeMillis()
+            StatsStore.recordEffectShown(this, StatsStore.MODULE_BEDTIME, effect)
         }
 
         val themedContext = ContextThemeWrapper(this, R.style.Theme_StormRoot)
@@ -527,12 +671,10 @@ class OverlayService : Service() {
         val vignetteScrim = view.findViewById<View>(R.id.vignetteScrim)
         val decorativeContainer = view.findViewById<android.widget.FrameLayout>(R.id.decorativeContainer)
 
-        // The warm dimming (scrim/vignette/blur) is bedtime's own staged progression and
-        // always applies; only the decorative particle layer underneath it is swappable —
-        // it defaults to the storm visual but can be any of the 9 overlay effects.
-        val decorativeView = createEffectView(themedContext, BedtimeDriftPrefs.getOverlayEffect(this))
+        val decorativeView = createEffectView(themedContext, effect)
         decorativeContainer.addView(decorativeView)
         startEffectView(decorativeView)
+        bedtimeEffectView = decorativeView
 
         val density = resources.displayMetrics.density
         val intensity = when (result.stage) {
@@ -558,27 +700,84 @@ class OverlayService : Service() {
             DriftStage.NONE -> 0f
         }
         setEffectValue(decorativeView, intensity)
+        StatsStore.recordNudgeIntensityTick(this, StatsStore.MODULE_BEDTIME, intensity, BEDTIME_TICK_MS)
 
         windowController.setLayer(LAYER_BEDTIME, view)
+        updateSnoozeChip()
+    }
+
+    private fun clearBedtimeLayer() {
+        bedtimeNudgeStartMillis?.let { start ->
+            StatsStore.recordNudgeSession(this, StatsStore.MODULE_BEDTIME, start, System.currentTimeMillis())
+        }
+        bedtimeNudgeStartMillis = null
+        windowController.setLayer(LAYER_BEDTIME, null)
+        windowController.updateBlurBehind(0)
+        bedtimeEffectView = null
+        updateSnoozeChip()
     }
 
     private fun updateDoomscrollLayer() {
-        if (!DoomscrollPrefs.isEnabled(this) ||
-            !OverlayPermission.isGranted(this) ||
-            !UsageAccessPermission.isGranted(this)
-        ) {
+        if (!DoomscrollPrefs.isEnabled(this)) {
+            usageAccessRevokedNotified = false
+            clearDoomscrollLayer()
+            return
+        }
+        if (!OverlayPermission.isGranted(this)) {
+            clearDoomscrollLayer()
+            return
+        }
+        if (!UsageAccessPermission.isGranted(this)) {
+            // The user turned this module on but Usage Access was revoked separately (e.g. from
+            // system settings) — blocking is now silently inert unless we say something.
+            notifyUsageAccessRevokedIfNeeded()
+            clearDoomscrollLayer()
+            return
+        }
+        usageAccessRevokedNotified = false
+
+        if (System.currentTimeMillis() < DoomscrollPrefs.getSnoozedUntil(this)) {
             clearDoomscrollLayer()
             return
         }
 
+        // Skip this tick if the previous query is still running rather than stacking up more
+        // background work — the next tick (4s later) will pick up fresh data anyway.
+        if (isQueryingDoomscrollUsage) return
+        isQueryingDoomscrollUsage = true
+
         val targetPackages = DoomscrollPrefs.getTargetPackages(this)
-        val foregroundPackage = UsageStatsHelper.currentForegroundPackage(this)
+        if (usageStatsExecutor.isShutdown) {
+            isQueryingDoomscrollUsage = false
+            return
+        }
+        try {
+            usageStatsExecutor.execute {
+                // The two UsageStatsManager queries below are genuinely slow system calls
+                // (queryEvents scans a 6h window); run them off the main thread so they can't block
+                // UI taps in the host Activity, which shares this thread since the service has no
+                // android:process isolation.
+                val foregroundPackage = UsageStatsHelper.currentForegroundPackage(this)
+                val usedMinutes = UsageStatsHelper.todayUsageMinutes(this, targetPackages, DoomscrollPrefs.RESET_HOUR)
+                handler.post {
+                    isQueryingDoomscrollUsage = false
+                    applyDoomscrollUsage(targetPackages, foregroundPackage, usedMinutes)
+                }
+            }
+        } catch (e: RejectedExecutionException) {
+            isQueryingDoomscrollUsage = false
+        }
+    }
+
+    private fun applyDoomscrollUsage(targetPackages: Set<String>, foregroundPackage: String?, usedMinutes: Int) {
+        // The monitor may have been disabled while the background query was in flight.
+        if (!isDoomscrollMonitorActive) return
+
         if (foregroundPackage == null || foregroundPackage !in targetPackages) {
             clearDoomscrollLayer()
             return
         }
 
-        val usedMinutes = UsageStatsHelper.todayUsageMinutes(this, targetPackages, DoomscrollPrefs.RESET_HOUR)
         val result = DoomscrollEngine.calculate(
             usedMinutes,
             DoomscrollPrefs.getDailyLimitMinutes(this),
@@ -590,7 +789,11 @@ class OverlayService : Service() {
             return
         }
 
-        val effect = DoomscrollPrefs.getOverlayEffect(this)
+        val effect = OverlayEffectOptions.effectiveEffect(
+            this,
+            DoomscrollPrefs.getOverlayEffect(this),
+            DoomscrollPrefs.DEFAULT_OVERLAY_EFFECT
+        )
         if (doomscrollEffectView == null || doomscrollEffect != effect) {
             doomscrollEffectView?.let { stopEffectView(it) }
             val themedContext = ContextThemeWrapper(this, R.style.Theme_StormRoot)
@@ -600,9 +803,12 @@ class OverlayService : Service() {
             doomscrollEffect = effect
             windowController.setLayer(LAYER_DOOMSCROLL, effectView)
             doomscrollNudgeStartMillis = System.currentTimeMillis()
+            StatsStore.recordEffectShown(this, StatsStore.MODULE_DOOMSCROLL, effect)
         }
 
         setEffectValue(doomscrollEffectView ?: return, result.rampProgress)
+        StatsStore.recordNudgeIntensityTick(this, StatsStore.MODULE_DOOMSCROLL, result.rampProgress, DOOMSCROLL_TICK_MS)
+        updateSnoozeChip()
     }
 
     private fun clearDoomscrollLayer() {
@@ -615,6 +821,7 @@ class OverlayService : Service() {
         windowController.setLayer(LAYER_DOOMSCROLL, null)
         doomscrollEffectView = null
         doomscrollEffect = null
+        updateSnoozeChip()
     }
 
     private fun registerMovementSensor() {
@@ -623,6 +830,7 @@ class OverlayService : Service() {
         }
         val manager = sensorManager ?: return
         if (movementSensorListener != null) return
+        consecutiveAccelSpikes = 0
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
@@ -635,7 +843,19 @@ class OverlayService : Service() {
                                 event.values[2] * event.values[2]
                         )
                         if (abs(magnitude - SensorManager.GRAVITY_EARTH) > MOVEMENT_ACCEL_THRESHOLD) {
-                            onMovementDetected()
+                            val now = System.currentTimeMillis()
+                            if (consecutiveAccelSpikes == 0 || now - firstAccelSpikeMillis > MOVEMENT_SAMPLE_WINDOW_MS) {
+                                consecutiveAccelSpikes = 1
+                                firstAccelSpikeMillis = now
+                            } else {
+                                consecutiveAccelSpikes++
+                            }
+                            if (consecutiveAccelSpikes >= MOVEMENT_CONSECUTIVE_SAMPLES_REQUIRED) {
+                                consecutiveAccelSpikes = 0
+                                onMovementDetected()
+                            }
+                        } else {
+                            consecutiveAccelSpikes = 0
                         }
                     }
                 }
@@ -674,6 +894,10 @@ class OverlayService : Service() {
             clearRootsLayer()
             return
         }
+        if (System.currentTimeMillis() < SittingRootsPrefs.getSnoozedUntil(this)) {
+            clearRootsLayer()
+            return
+        }
 
         val sedentaryMinutes = ((System.currentTimeMillis() - lastMovementMillis) / 60_000L).toInt()
         val targetGrowth = SittingRootsEngine.calculateGrowth(
@@ -687,7 +911,11 @@ class OverlayService : Service() {
             return
         }
 
-        val effect = SittingRootsPrefs.getOverlayEffect(this)
+        val effect = OverlayEffectOptions.effectiveEffect(
+            this,
+            SittingRootsPrefs.getOverlayEffect(this),
+            SittingRootsPrefs.DEFAULT_OVERLAY_EFFECT
+        )
         if (rootsEffectView == null || rootsEffect != effect) {
             rootsGrowthAnimator?.cancel()
             rootsEffectView?.let { stopEffectView(it) }
@@ -699,9 +927,12 @@ class OverlayService : Service() {
             rootsEffect = effect
             windowController.setLayer(LAYER_ROOTS, effectView)
             rootsNudgeStartMillis = System.currentTimeMillis()
+            StatsStore.recordEffectShown(this, StatsStore.MODULE_ROOTS, effect)
         }
 
         animateRootsGrowthTo(targetGrowth)
+        StatsStore.recordNudgeIntensityTick(this, StatsStore.MODULE_ROOTS, targetGrowth, ROOTS_TICK_MS)
+        updateSnoozeChip()
     }
 
     private fun retreatRootsIfShowing() {
@@ -754,11 +985,41 @@ class OverlayService : Service() {
         rootsEffectView = null
         rootsEffect = null
         rootsCurrentValue = 0f
+        updateSnoozeChip()
     }
 
-    /** Instantiates the view for a stored EFFECT_* choice, full-screen and ready to be
-     *  added to any FrameLayout — used by the sitting-roots/doomscroll/bedtime layers to
-     *  let each feature use whichever of the 9 overlay visuals the user picked. */
+    // Doomscroll and sitting-roots nudges previously had no way out short of complying (leaving
+    // the app / getting up) — unlike bedtime, which already had snooze prefs wired up but no UI
+    // ever called them. This surfaces one real "Not now" control for whichever nudge is active.
+    // The main overlay window is FLAG_NOT_TOUCHABLE so this lives in its own small touchable window.
+    private fun updateSnoozeChip() {
+        val anyActive = bedtimeEffectView != null || doomscrollEffectView != null || rootsEffectView != null
+        if (!anyActive) {
+            windowController.hideSnoozeControl()
+            return
+        }
+        val themedContext = ContextThemeWrapper(this, R.style.Theme_StormRoot)
+        val chip = LayoutInflater.from(themedContext).inflate(R.layout.overlay_snooze_chip, null)
+        chip.setOnClickListener { onSnoozeTapped() }
+        windowController.showSnoozeControl(chip)
+    }
+
+    private fun onSnoozeTapped() {
+        if (bedtimeEffectView != null) {
+            BedtimeDriftPrefs.snoozeFor(this, SNOOZE_MINUTES)
+            clearBedtimeLayer()
+        }
+        if (doomscrollEffectView != null) {
+            DoomscrollPrefs.snoozeFor(this, SNOOZE_MINUTES)
+            clearDoomscrollLayer()
+        }
+        if (rootsEffectView != null) {
+            SittingRootsPrefs.snoozeFor(this, SNOOZE_MINUTES)
+            clearRootsLayer()
+        }
+        updateSnoozeChip()
+    }
+
     private fun createEffectView(themedContext: Context, effect: String): View {
         val view = when (effect) {
             EFFECT_CALM_VINES -> RootsOverlayView(themedContext)
@@ -769,6 +1030,8 @@ class OverlayService : Service() {
             EFFECT_SUN_RAYS -> SunRaysOverlayView(themedContext)
             EFFECT_WATER_DROPLETS -> WaterDropletsOverlayView(themedContext)
             EFFECT_DEW_WEB -> DewSpiderWebOverlayView(themedContext)
+            EFFECT_FIRE -> FireOverlayView(themedContext)
+            EFFECT_STARRY_NIGHT -> NightSkyOverlayView(themedContext)
             else -> FogOverlayView(themedContext)
         }
         view.layoutParams = android.widget.FrameLayout.LayoutParams(
@@ -789,6 +1052,8 @@ class OverlayService : Service() {
             is SunRaysOverlayView -> view.startAnimation()
             is WaterDropletsOverlayView -> view.startAnimation()
             is DewSpiderWebOverlayView -> view.startAnimation()
+            is FireOverlayView -> view.startAnimation()
+            is NightSkyOverlayView -> view.startAnimation()
         }
     }
 
@@ -803,6 +1068,8 @@ class OverlayService : Service() {
             is SunRaysOverlayView -> view.stopAnimation()
             is WaterDropletsOverlayView -> view.stopAnimation()
             is DewSpiderWebOverlayView -> view.stopAnimation()
+            is FireOverlayView -> view.stopAnimation()
+            is NightSkyOverlayView -> view.stopAnimation()
         }
     }
 
@@ -817,6 +1084,8 @@ class OverlayService : Service() {
             is SunRaysOverlayView -> view.intensity = value
             is WaterDropletsOverlayView -> view.intensity = value
             is DewSpiderWebOverlayView -> view.intensity = value
+            is FireOverlayView -> view.intensity = value
+            is NightSkyOverlayView -> view.intensity = value
         }
     }
 
@@ -838,5 +1107,36 @@ class OverlayService : Service() {
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
+    }
+
+    private fun notifyUsageAccessRevokedIfNeeded() {
+        if (usageAccessRevokedNotified) return
+        usageAccessRevokedNotified = true
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                USAGE_ACCESS_WARNING_CHANNEL_ID,
+                getString(R.string.usage_access_revoked_channel),
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val settingsIntent = UsageAccessPermission.requestIntent().addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val pendingIntent = android.app.PendingIntent.getActivity(
+            this, 0, settingsIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, USAGE_ACCESS_WARNING_CHANNEL_ID)
+            .setContentTitle(getString(R.string.usage_access_revoked_title))
+            .setContentText(getString(R.string.usage_access_revoked_body))
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+        notificationManager.notify(USAGE_ACCESS_WARNING_NOTIFICATION_ID, notification)
     }
 }

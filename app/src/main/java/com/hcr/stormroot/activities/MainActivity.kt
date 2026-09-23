@@ -8,7 +8,10 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.hcr.stormroot.R
+import com.hcr.stormroot.core.ads.RewardedAdManager
 import com.hcr.stormroot.core.anchors.AnchorStatus
 import com.hcr.stormroot.core.bedtime.BedtimeDriftPrefs
 import com.hcr.stormroot.core.doomscroll.DoomscrollPrefs
@@ -78,6 +81,15 @@ class MainActivity : AppCompatActivity() {
         if (SittingRootsPrefs.isEnabled(this)) {
             OverlayService.startRootsMonitor(this)
         }
+
+        // General-audience content rating for a calm/wellness app — set before initialize() so
+        // it applies to the very first ad request rather than only ones after this point.
+        MobileAds.setRequestConfiguration(
+            RequestConfiguration.Builder()
+                .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+                .build()
+        )
+        MobileAds.initialize(this) { RewardedAdManager.preload(this) }
 
         updateHeaderBadge()
     }

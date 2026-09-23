@@ -1,6 +1,6 @@
 # Project brief: Storm Root — ambient screen-time nudger
 
-> **App name: Storm Root** — tagline: "Grows with every scroll."
+> **App name: Storm Root** — tagline: "Grow with scrolls."
 > No exact match found on Google Play or the App Store during a preliminary search; a similarly-named iOS app ("Roots: Screen Time Control") exists in the same category with a different mechanic (blocking vs. overlays), which is a minor brand-adjacency risk worth being aware of, not a hard conflict. Run a full domain/trademark check before final commitment.
 
 ## 1. Concept

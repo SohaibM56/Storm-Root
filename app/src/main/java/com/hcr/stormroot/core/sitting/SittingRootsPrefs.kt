@@ -9,6 +9,7 @@ object SittingRootsPrefs {
     private const val KEY_SITTING_THRESHOLD_MINUTES = "sitting_threshold_minutes"
     private const val KEY_OVERLAY_EFFECT = "overlay_effect"
     private const val KEY_GROWTH_RAMP_MINUTES = "growth_ramp_minutes"
+    private const val KEY_SNOOZED_UNTIL = "snoozed_until"
 
     const val DEFAULT_SITTING_THRESHOLD_MINUTES = 45
     const val DEFAULT_OVERLAY_EFFECT = "CALM_VINES"
@@ -42,5 +43,12 @@ object SittingRootsPrefs {
 
     fun setGrowthRampMinutes(context: Context, minutes: Int) {
         prefs(context).edit { putInt(KEY_GROWTH_RAMP_MINUTES, minutes) }
+    }
+
+    fun getSnoozedUntil(context: Context): Long = prefs(context).getLong(KEY_SNOOZED_UNTIL, 0L)
+
+    fun snoozeFor(context: Context, minutes: Int) {
+        val until = System.currentTimeMillis() + minutes * 60_000L
+        prefs(context).edit { putLong(KEY_SNOOZED_UNTIL, until) }
     }
 }

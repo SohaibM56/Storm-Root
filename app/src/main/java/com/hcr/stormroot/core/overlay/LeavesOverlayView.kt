@@ -11,6 +11,10 @@ import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
 import kotlin.random.Random
+import androidx.core.graphics.toColorInt
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.withTranslation
+import androidx.core.graphics.withClip
 
 private fun shade(base: Int, factor: Float): Int {
     val hsv = FloatArray(3)
@@ -29,7 +33,6 @@ private fun jitterColor(base: Int): Int {
     return Color.HSVToColor(hsv)
 }
 
-/** Smooths a closed polar-coordinate outline into a Path (quad curve through each vertex, passing through edge midpoints). */
 private fun smoothPolarPath(points: List<Pair<Float, Float>>, xStretch: Float, yStretch: Float, jitter: Float): Path {
     val n = points.size
     val verts = Array(n) { i ->
@@ -53,7 +56,6 @@ private fun smoothPolarPath(points: List<Pair<Float, Float>>, xStretch: Float, y
     return path
 }
 
-/** Builds an irregular, slightly asymmetric uniform-lobe leaf outline (oak/narrow types). */
 private fun buildLobedLeafPath(
     lobes: Int,
     tipRadius: Float,
@@ -71,7 +73,6 @@ private fun buildLobedLeafPath(
     return smoothPolarPath(points, xStretch, yStretch, jitter)
 }
 
-/** Simple rounded leaf (birch/heart-shaped) with organic per-leaf asymmetry. */
 private fun buildOvalPath(): Path {
     val topY = -26f - Random.nextFloat() * 6f
     val botY = 30f + Random.nextFloat() * 8f
@@ -104,7 +105,6 @@ class LeavesOverlayView @JvmOverloads constructor(
         var type = LeafType.MAPLE
         var shapePath: Path = Path()
 
-        // Real photographed maple leaf sprite (used instead of the vector path for MAPLE type).
         var bitmap: Bitmap? = null
         var bitmapScale = 1f
         var tintFilter: ColorFilter? = null
@@ -126,15 +126,29 @@ class LeavesOverlayView @JvmOverloads constructor(
         var secondaryColor = 0
         var baseAlpha = 255
 
-        // Irregular blotches: x, y, radiusX, radiusY, rotationDeg, alpha, isLight(1f/0f) — vector types only
         var blotches: Array<FloatArray> = emptyArray()
-        // Side-vein pairs for vector types: yStart, spreadX, spreadY
+
         var veins: Array<FloatArray> = emptyArray()
+
+        // Built once per init() instead of allocated every onDraw frame — color/secondaryColor/
+        // baseScale are fixed for the particle's lifetime, only the front/back face toggles.
+        var frontShader: RadialGradient? = null
+        var backShader: RadialGradient? = null
+
+        private fun buildShader(lightFactor: Float): RadialGradient {
+            val highlight = shade(color, 1.3f * lightFactor)
+            val mid = shade(color, 0.95f * lightFactor)
+            val edge = shade(secondaryColor, 0.55f * lightFactor)
+            return RadialGradient(
+                -6f, -10f, 58f * baseScale,
+                intArrayOf(highlight, mid, edge),
+                floatArrayOf(0f, 0.5f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
 
         var landed = false
 
-        // Short ease-in used only in the last moment before landing, so a leaf slides and settles
-        // flat instead of teleporting sideways to its resting bin and snapping flat in one frame.
         var settling = false
         var settleT = 0f
         var settleFromX = 0f
@@ -146,7 +160,6 @@ class LeavesOverlayView @JvmOverloads constructor(
         var settleTargetY = 0f
 
         fun init(width: Int, height: Int, mapleBitmaps: List<Bitmap>, spawnAtTop: Boolean = false) {
-            // Maple-dominant, matching the reference video; a little variety from the other shapes.
             val typeRoll = Random.nextFloat()
             type = when {
                 typeRoll < 0.60f -> LeafType.MAPLE
@@ -191,11 +204,8 @@ class LeavesOverlayView @JvmOverloads constructor(
             }
 
             x = Random.nextFloat() * width
-            // Staggered entry height so new leaves don't all appear in a single static-looking row.
             y = if (spawnAtTop) -80f - Random.nextFloat() * 320f else Random.nextFloat() * height
 
-            // Brisk fall so the whole scene reaches its settled, full look within about a minute.
-            // A hard x-clamp in update() keeps this safe from the old edge-drift bug regardless.
             vy = 2.6f + Random.nextFloat() * 3.0f
             vx = (Random.nextFloat() - 0.5f) * 1.2f
 
@@ -209,17 +219,18 @@ class LeavesOverlayView @JvmOverloads constructor(
             scaleY = baseScale
             baseAlpha = 165 + Random.nextInt(85)
 
-            // Warm autumn palette for the vector leaf types, jittered so no two match
             val autumnColors = arrayOf(
-                "#E08A2E" to "#B44A16", // Amber to burnt orange
-                "#D9721F" to "#A13712", // Pumpkin to rust
-                "#C94A24" to "#7E2412", // Persimmon to brick red
-                "#E0A72E" to "#B5691C", // Golden to ochre
-                "#B33A1E" to "#6E1C10"  // Deep red to maroon
+                "#E08A2E" to "#B44A16",
+                "#D9721F" to "#A13712",
+                "#C94A24" to "#7E2412",
+                "#E0A72E" to "#B5691C",
+                "#B33A1E" to "#6E1C10"
             )
             val pair = autumnColors[Random.nextInt(autumnColors.size)]
-            color = jitterColor(Color.parseColor(pair.first))
-            secondaryColor = jitterColor(Color.parseColor(pair.second))
+            color = jitterColor(pair.first.toColorInt())
+            secondaryColor = jitterColor(pair.second.toColorInt())
+            frontShader = buildShader(1f)
+            backShader = buildShader(0.65f)
 
             if (type != LeafType.MAPLE) {
                 val (topY, botY) = leafVeinExtent(type)
@@ -263,13 +274,10 @@ class LeavesOverlayView @JvmOverloads constructor(
             if (landed) return
 
             if (settling) {
-                // Slow enough to read as a leaf gently tipping over and settling (~0.5s), not a snap.
                 settleT = (settleT + 0.035f).coerceAtMost(1f)
                 val ease = settleT * settleT * (3f - 2f * settleT) // smoothstep
                 x = settleFromX + (settleTargetX - settleFromX) * ease
                 y = settleFromY + (settleTargetY - settleFromY) * ease
-                // Rotation is left as-is on purpose — a real leaf keeps whatever angle it landed
-                // at instead of snapping upright, which is what made this look "pasted" before.
                 scaleX = settleFromScaleX + (baseScale - settleFromScaleX) * ease
                 scaleY = settleFromScaleY + (baseScale - settleFromScaleY) * ease
                 if (settleT >= 1f) {
@@ -282,22 +290,17 @@ class LeavesOverlayView @JvmOverloads constructor(
 
             tumblePhase += tumbleSpeed
 
-            // 3D Tumble simulation: The leaf squashes and stretches as it flips
             val tumbleFactor = cos(tumblePhase.toDouble()).toFloat()
             scaleX = baseScale * abs(tumbleFactor).coerceIn(0.15f, 1.0f)
 
-            // GLIDING PHYSICS: A leaf "catches" the air when it's flat and glides
-            // When tumbleFactor is near 0, the leaf is "edge-on" and drops faster
             val airCatch = abs(tumbleFactor)
             val gravityEffect = 1.1f - (airCatch * 0.4f)
 
-            // Drifting based on tilt and wind
             vx += (tumbleFactor * 0.1f) + (windEffect * 0.04f)
-            vx *= 0.985f // Air friction
+            vx *= 0.985f
 
             x += vx + windEffect
-            // Hard safety clamp: even with pathological drift over a long flight, a leaf can
-            // never wander far past the edges — prevents leaves piling into edge-only towers.
+
             x = x.coerceIn(-40f, width + 40f)
             y += vy * gravityEffect
 
@@ -307,11 +310,8 @@ class LeavesOverlayView @JvmOverloads constructor(
             if (y >= groundY) {
                 y = groundY
                 if (!trySettle(this)) {
-                    // pile is full at this spot; recycle the leaf back to the top
                     init(width, height, mapleBitmaps, spawnAtTop = true)
                 } else {
-                    // Ease into the resting spot over a few frames instead of snapping there —
-                    // trySettle() already stashed the target bin's position in settleTargetX/Y.
                     settling = true
                     settleT = 0f
                     settleFromX = x
@@ -337,10 +337,23 @@ class LeavesOverlayView @JvmOverloads constructor(
 
         private fun ensureMapleBitmaps(context: Context): List<Bitmap> {
             cachedMapleBitmaps?.let { return it }
+            // Leaves are drawn at ~68px (bitmapScale below), so decode at ~2x that instead of
+            // the drawable's full resolution to avoid holding oversized bitmaps for the process lifetime.
+            val targetLongSide = (68f * 2f * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
             val loaded = listOf(R.drawable.leaf_maple_red, R.drawable.leaf_maple_orange, R.drawable.leaf_maple_yellow)
-                .map { BitmapFactory.decodeResource(context.resources, it) }
+                .map { decodeDownsampled(context, it, targetLongSide) }
             cachedMapleBitmaps = loaded
             return loaded
+        }
+
+        private fun decodeDownsampled(context: Context, resId: Int, targetLongSide: Int): Bitmap {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeResource(context.resources, resId, bounds)
+            val longSide = max(bounds.outWidth, bounds.outHeight)
+            var sampleSize = 1
+            while (longSide / (sampleSize * 2) >= targetLongSide) sampleSize *= 2
+            val opts = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            return BitmapFactory.decodeResource(context.resources, resId, opts)
         }
     }
 
@@ -367,13 +380,9 @@ class LeavesOverlayView @JvmOverloads constructor(
     private var isAnimating = false
     private var globalWindTime = 0f
     private var spawnAccumulator = 0f
-
-    // Landed leaves are baked into this bitmap instead of staying live particles,
-    // so the pile can grow indefinitely without any per-frame rendering cost.
     private var groundBitmap: Bitmap? = null
     private var groundCanvas: Canvas? = null
 
-    // Ground pile simulation: leaves collect at the bottom instead of vanishing.
     private val groundBinCount = 40
     private var groundHeights = FloatArray(groundBinCount)
     private var groundBinWidth = 0f
@@ -386,20 +395,11 @@ class LeavesOverlayView @JvmOverloads constructor(
 
     private fun groundHeightAt(x: Float): Float = groundHeights[binIndexForX(x)]
 
-    // More leaves in flight at once for a fuller scene.
     private fun currentMaxAirborne(): Int = (18 + 42 * intensity).toInt()
 
-    /**
-     * Attempts to settle a leaf onto the pile near its x position. Returns false if the pile is
-     * full there. Picks the *least-filled* bin in a wide window (not just the first open one) so
-     * leaves spread into a natural, patchy scatter instead of packing one column solid before
-     * spilling to the next — and neighbor spreading is probabilistic so gaps stay between clusters.
-     */
     private fun trySettleOnGround(p: LeafParticle): Boolean {
         val footprint = 10f + p.baseScale * 8f
         val bin = binIndexForX(p.x)
-        // Kept small so the eased slide into place (see LeafParticle.settling) stays subtle —
-        // a leaf should nudge into a nearby gap, not glide halfway across the pile to reach one.
         val searchRadius = 2
         var targetBin = -1
         var bestHeight = Float.MAX_VALUE
@@ -414,7 +414,6 @@ class LeavesOverlayView @JvmOverloads constructor(
         }
         if (targetBin == -1) return false
 
-        // Resting surface is the pile height *before* this leaf's own footprint is added.
         p.settleTargetX = (targetBin + 0.5f) * groundBinWidth
         p.settleTargetY = height - groundHeights[targetBin]
         groundHeights[targetBin] = (groundHeights[targetBin] + footprint).coerceAtMost(maxPileHeight)
@@ -479,15 +478,11 @@ class LeavesOverlayView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         if (w > 0) groundBinWidth = w.toFloat() / groundBinCount
-        // Leaves accumulate until they cover almost the entire screen height (a sliver at the
-        // very top stays clear so it never looks like a hard, artificial ceiling).
-        // Capped well below full pile height so the ground layer stays a light scatter of leaves
-        // near the very bottom edge, not a solid carpet that climbs the screen.
         if (h > 0) maxPileHeight = h * 0.22f
         groundHeights.fill(0f)
         if (w > 0 && h > 0) {
             groundBitmap?.recycle()
-            val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            val bmp = createBitmap(w, h)
             groundBitmap = bmp
             groundCanvas = Canvas(bmp)
         }
@@ -520,25 +515,21 @@ class LeavesOverlayView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         groundBitmap?.let { canvas.drawBitmap(it, 0f, 0f, null) }
-        for (i in 0 until particles.size) {
+        for (i in particles.indices) {
             drawParticle(canvas, particles[i])
         }
     }
 
     private fun stampParticleToGround(p: LeafParticle) {
-        // Deliberately skip the drop-shadow layer here: the ground bitmap is permanent, and
-        // repeatedly alpha-blending a translucent shadow at the same pixels as leaves pile up
-        // mathematically trends toward solid black over time. Only airborne leaves get a shadow.
         val gc = groundCanvas ?: return
         if (p.bitmap != null) {
             drawBitmapLeafOnly(gc, p)
         } else {
-            gc.save()
-            gc.translate(p.x, p.y)
-            gc.rotate(p.rotation)
-            gc.scale(p.scaleX, p.scaleY)
-            drawLeafShape(gc, p, paint)
-            gc.restore()
+            gc.withTranslation(p.x, p.y) {
+                rotate(p.rotation)
+                scale(p.scaleX, p.scaleY)
+                drawLeafShape(this, p, paint)
+            }
         }
     }
 
@@ -549,7 +540,6 @@ class LeavesOverlayView @JvmOverloads constructor(
             return
         }
 
-        // 1. Shadow
         canvas.save()
         val shadowOffset = 25f * p.baseScale
         canvas.translate(p.x + shadowOffset, p.y + shadowOffset)
@@ -558,25 +548,22 @@ class LeavesOverlayView @JvmOverloads constructor(
         drawLeafShape(canvas, p, shadowPaint)
         canvas.restore()
 
-        // 2. Leaf
-        canvas.save()
-        canvas.translate(p.x, p.y)
-        canvas.rotate(p.rotation)
-        canvas.scale(p.scaleX, p.scaleY)
-        drawLeafShape(canvas, p, paint)
-        canvas.restore()
+        canvas.withTranslation(p.x, p.y) {
+            rotate(p.rotation)
+            scale(p.scaleX, p.scaleY)
+            drawLeafShape(this, p, paint)
+        }
     }
 
     private fun drawBitmapShadow(canvas: Canvas, p: LeafParticle) {
         val bmp = p.bitmap ?: return
         val shadowOffset = 25f * p.baseScale
-        canvas.save()
-        canvas.translate(p.x + shadowOffset, p.y + shadowOffset)
-        canvas.rotate(p.rotation)
-        canvas.scale(p.scaleX * p.bitmapScale, p.scaleY * p.bitmapScale)
-        canvas.translate(-bmp.width / 2f, -bmp.height / 2f)
-        canvas.drawBitmap(bmp, 0f, 0f, bitmapShadowPaint)
-        canvas.restore()
+        canvas.withTranslation(p.x + shadowOffset, p.y + shadowOffset) {
+            rotate(p.rotation)
+            scale(p.scaleX * p.bitmapScale, p.scaleY * p.bitmapScale)
+            translate(-bmp.width / 2f, -bmp.height / 2f)
+            drawBitmap(bmp, 0f, 0f, bitmapShadowPaint)
+        }
     }
 
     private fun drawBitmapLeafOnly(canvas: Canvas, p: LeafParticle) {
@@ -587,13 +574,12 @@ class LeavesOverlayView @JvmOverloads constructor(
         bitmapPaint.alpha = (p.baseAlpha * (if (isFront) 1f else 0.8f)).toInt().coerceIn(0, 255)
         bitmapPaint.colorFilter = if (isFront) p.tintFilter else backOfLeafFilter
 
-        canvas.save()
-        canvas.translate(p.x, p.y)
-        canvas.rotate(p.rotation)
-        canvas.scale(p.scaleX * p.bitmapScale, p.scaleY * p.bitmapScale)
-        canvas.translate(-bmp.width / 2f, -bmp.height / 2f)
-        canvas.drawBitmap(bmp, 0f, 0f, bitmapPaint)
-        canvas.restore()
+        canvas.withTranslation(p.x, p.y) {
+            rotate(p.rotation)
+            scale(p.scaleX * p.bitmapScale, p.scaleY * p.bitmapScale)
+            translate(-bmp.width / 2f, -bmp.height / 2f)
+            drawBitmap(bmp, 0f, 0f, bitmapPaint)
+        }
     }
 
     private fun drawLeafShape(canvas: Canvas, p: LeafParticle, targetPaint: Paint) {
@@ -608,47 +594,32 @@ class LeavesOverlayView @JvmOverloads constructor(
         val shapePath = p.shapePath
 
         if (targetPaint == paint) {
-            // Multi-stop gradient: a warm off-center highlight fading to a darker, drier edge —
-            // reads as light passing through thin leaf tissue instead of a flat fill.
-            val lightFactor = if (isFront) 1f else 0.65f
-            val highlight = shade(p.color, 1.3f * lightFactor)
-            val mid = shade(p.color, 0.95f * lightFactor)
-            val edge = shade(p.secondaryColor, 0.55f * lightFactor)
-            targetPaint.shader = RadialGradient(
-                -6f, -10f, 58f * p.baseScale,
-                intArrayOf(highlight, mid, edge),
-                floatArrayOf(0f, 0.5f, 1f),
-                Shader.TileMode.CLAMP
-            )
+            targetPaint.shader = if (isFront) p.frontShader else p.backShader
             targetPaint.alpha = (p.baseAlpha * (0.82f + absTumble * 0.18f)).toInt().coerceIn(0, 255)
         }
 
         canvas.drawPath(shapePath, targetPaint)
 
         if (targetPaint == paint) {
-            // Irregular mottled blotches (dry patches + light patches), clipped to the leaf silhouette
-            canvas.save()
-            canvas.clipPath(shapePath)
-            targetPaint.shader = null
-            targetPaint.style = Paint.Style.FILL
-            val alphaScale = if (isFront) 1f else 0.35f
-            for (b in p.blotches) {
-                val isLight = b[6] > 0.5f
-                targetPaint.color = if (isLight) {
-                    Color.argb((b[5] * alphaScale).toInt().coerceIn(0, 255), 255, 236, 190)
-                } else {
-                    Color.argb((b[5] * alphaScale).toInt().coerceIn(0, 255), 58, 36, 20)
+            canvas.withClip(shapePath) {
+                targetPaint.shader = null
+                targetPaint.style = Paint.Style.FILL
+                val alphaScale = if (isFront) 1f else 0.35f
+                for (b in p.blotches) {
+                    val isLight = b[6] > 0.5f
+                    targetPaint.color = if (isLight) {
+                        Color.argb((b[5] * alphaScale).toInt().coerceIn(0, 255), 255, 236, 190)
+                    } else {
+                        Color.argb((b[5] * alphaScale).toInt().coerceIn(0, 255), 58, 36, 20)
+                    }
+                    withTranslation(b[0], b[1]) {
+                        rotate(b[4])
+                        scale(max(b[2], 0.1f), max(b[3], 0.1f))
+                        drawCircle(0f, 0f, 1f, targetPaint)
+                    }
                 }
-                canvas.save()
-                canvas.translate(b[0], b[1])
-                canvas.rotate(b[4])
-                canvas.scale(max(b[2], 0.1f), max(b[3], 0.1f))
-                canvas.drawCircle(0f, 0f, 1f, targetPaint)
-                canvas.restore()
             }
-            canvas.restore()
 
-            // Edge definition: a faint darker rim so the silhouette reads clearly without looking painted-on
             targetPaint.shader = null
             targetPaint.style = Paint.Style.STROKE
             targetPaint.strokeWidth = 1.1f * p.baseScale

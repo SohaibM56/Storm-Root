@@ -3,6 +3,9 @@ package com.hcr.stormroot.core.doomscroll
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
@@ -21,10 +24,6 @@ object InstalledAppsHelper {
     private val pendingCallbacks = mutableListOf<(List<InstalledApp>) -> Unit>()
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    /** Returns the cached list immediately if available, otherwise loads it (reusing an
-     *  in-flight load if one is already running) and delivers it via [onReady] on the main
-     *  thread once ready. First call happens the first time the apps dialog opens; nothing
-     *  is scanned at app launch. */
     fun getOrLoad(context: Context, onReady: (List<InstalledApp>) -> Unit) {
         cache?.let {
             onReady(it)
@@ -35,10 +34,6 @@ object InstalledAppsHelper {
             loadInBackground(context)
         }
     }
-
-    /** Forces a fresh PackageManager scan even if a list is already cached — for an explicit
-     *  user-triggered refresh (e.g. pull-to-refresh) after installing/uninstalling an app.
-     *  Piggybacks on an in-flight load instead of starting a second one if one is already running. */
     fun refresh(context: Context, onReady: (List<InstalledApp>) -> Unit) {
         pendingCallbacks.add(onReady)
         if (!isLoading) {
@@ -75,11 +70,24 @@ object InstalledAppsHelper {
                     InstalledApp(
                         packageName = pkg,
                         label = pm.getApplicationLabel(appInfo).toString(),
-                        icon = pm.getApplicationIcon(appInfo)
+                        icon = downscaleIcon(context, pm.getApplicationIcon(appInfo))
                     )
                 }.getOrNull()
             }
             .sortedBy { it.label.lowercase() }
             .toList()
+    }
+
+    // The picker only ever displays icons at ~28sdp (item_app_checkbox.xml); app icons can be
+    // adaptive/full-res drawables far larger than that, and this list is cached in memory for
+    // the process lifetime, so bake each icon down to a bounded bitmap once at load time.
+    private const val ICON_TARGET_DP = 48
+    private fun downscaleIcon(context: Context, icon: Drawable): Drawable {
+        val targetPx = (ICON_TARGET_DP * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        val bitmap = Bitmap.createBitmap(targetPx, targetPx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        icon.setBounds(0, 0, targetPx, targetPx)
+        icon.draw(canvas)
+        return BitmapDrawable(context.resources, bitmap)
     }
 }

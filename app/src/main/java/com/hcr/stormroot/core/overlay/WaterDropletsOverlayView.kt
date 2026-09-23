@@ -10,15 +10,12 @@ import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.Choreographer
 import android.view.View
+import androidx.core.graphics.withTranslation
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
 
-/**
- * Droplets sitting on a glass surface — mostly still, with natural size variation and the
- * occasional droplet breaking loose and sliding down, leaving a thin trail behind it.
- */
 class WaterDropletsOverlayView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
@@ -38,10 +35,7 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
         var trailStartY = 0f
         var trailAlpha = 0f
         var justFinishedSliding = false // one-frame flag the view uses to spawn trail residue
-
-        /** How much to stretch vertically into a teardrop while actively sliding. */
         fun stretchFactor(): Float = if (isSliding) 1f + (vy / 2.2f) * 0.6f else 1f
-
         fun init(width: Int, height: Int) {
             x = Random.nextFloat() * width
             y = Random.nextFloat() * height
@@ -59,12 +53,10 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
             if (life < 1f) life = (life + 0.03f).coerceAtMost(1f)
 
             if (isSliding) {
-                // Acceleration scaled by intensity for "aggressive" movement
                 val accel = 0.04f + 0.08f * intensity
                 vy = (vy + accel + Random.nextFloat() * 0.03f).coerceAtMost(3.5f)
                 y += vy
                 
-                // Meandering path
                 x += sin(y * 0.05f) * (0.5f + 0.5f * intensity)
 
                 if (y > height + radius) {
@@ -76,7 +68,7 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
                     justFinishedSliding = true
                 }
             } else if (!isSatellite) {
-                // Chance to slide scales significantly with intensity
+
                 val slideChance = 0.0006f + 0.006f * intensity
                 if (radius > 8f && Random.nextFloat() < slideChance) {
                     isSliding = true
@@ -90,7 +82,6 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
             }
 
             if (y > height + radius + 40f) {
-                // Slid off the bottom — condense fresh somewhere new.
                 init(width, height)
                 y = -radius
             }
@@ -102,6 +93,59 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
     private val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val trailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private var isAnimating = false
+
+    // Gradients are built once per (bucketed) radius and reused via canvas translation instead
+    // of being reallocated every frame for every droplet — onDraw runs at 60fps for ~70+ droplets.
+    private val bodyGradients = HashMap<Int, RadialGradient>()
+    private val highlightGradientsA = HashMap<Int, RadialGradient>()
+    private val highlightGradientsB = HashMap<Int, RadialGradient>()
+    private val highlightGradientsC = HashMap<Int, RadialGradient>()
+    private val trailGradients = HashMap<Int, LinearGradient>()
+
+    private fun radiusBucket(radius: Float) = (radius * 4f).toInt()
+
+    private fun bodyGradientFor(radius: Float): RadialGradient {
+        val key = radiusBucket(radius)
+        return bodyGradients.getOrPut(key) {
+            val r = key / 4f
+            RadialGradient(
+                -r * 0.15f, -r * 0.15f, r * 1.15f,
+                intArrayOf(
+                    Color.argb(90, 235, 245, 250),
+                    Color.argb(55, 200, 222, 232),
+                    Color.argb(120, 130, 165, 185)
+                ),
+                floatArrayOf(0f, 0.7f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+    }
+
+    private fun highlightGradientFor(cache: HashMap<Int, RadialGradient>, radiusFraction: Float, radius: Float, baseAlpha: Int): RadialGradient {
+        val key = radiusBucket(radius)
+        return cache.getOrPut(key) {
+            val r = key / 4f
+            RadialGradient(
+                0f, 0f, r * radiusFraction,
+                Color.argb(baseAlpha, 255, 255, 255),
+                Color.argb(0, 255, 255, 255),
+                Shader.TileMode.CLAMP
+            )
+        }
+    }
+
+    private fun trailGradientFor(length: Float): LinearGradient {
+        val key = (length / 8f).toInt().coerceAtLeast(1)
+        return trailGradients.getOrPut(key) {
+            val len = key * 8f
+            LinearGradient(
+                0f, 0f, 0f, len,
+                Color.argb(0, 200, 225, 235),
+                Color.argb(70, 200, 225, 235),
+                Shader.TileMode.CLAMP
+            )
+        }
+    }
 
     var intensity: Float = 0.7f
         set(value) {
@@ -146,12 +190,10 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
             repeat(targetCount()) {
                 val d = Droplet()
                 d.init(w, h)
-                d.life = 1f // scene starts already condensed, not fading in from nothing
+                d.life = 1f
                 droplets.add(d)
                 if (d.radius > 11f) hosts.add(d)
             }
-            // Micro-satellite droplets clustered near bigger ones — real condensation rarely
-            // forms in perfect isolation.
             for (host in hosts) {
                 if (Random.nextFloat() > 0.6f) continue
                 repeat(1 + Random.nextInt(2)) {
@@ -185,7 +227,6 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
         if (w > 0 && h > 0) {
             val residueCap = targetCount() + (40 * intensity).toInt()
             
-            // Handle coalescence (droplet merging)
             var i = 0
             while (i < droplets.size) {
                 val d1 = droplets[i]
@@ -198,7 +239,6 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
                         val distSq = dx * dx + dy * dy
                         val mergeThreshold = (d1.radius + d2.radius) * 0.85f
                         if (distSq < mergeThreshold * mergeThreshold) {
-                            // Merge d2 into d1
                             d1.radius = sqrt(d1.radius * d1.radius + d2.radius * d2.radius).coerceAtMost(35f)
                             d1.vy = (d1.vy + 0.2f * intensity + 0.1f).coerceAtMost(3.5f)
                             droplets.removeAt(j)
@@ -212,7 +252,6 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
                 if (d1.justFinishedSliding) {
                     d1.justFinishedSliding = false
                     if (droplets.size < residueCap) {
-                        // A real sliding droplet leaves tiny leftover beads in its wake.
                         repeat(1 + Random.nextInt(2)) {
                             val residue = Droplet()
                             residue.x = d1.x + (Random.nextFloat() - 0.5f) * 6f
@@ -235,77 +274,57 @@ class WaterDropletsOverlayView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        for (i in 0 until droplets.size) {
+        for (i in droplets.indices) {
             val d = droplets[i]
             val alpha = d.life
+            val globalAlpha = (255 * alpha).toInt().coerceIn(0, 255)
 
-            // Trail left behind a droplet that slid (or is sliding).
             val trailTop = d.trailStartY
             if (d.isSliding || d.trailAlpha > 0f) {
                 val trailBottom = d.y
                 if (trailBottom > trailTop) {
-                    trailPaint.shader = LinearGradient(
-                        d.x, trailTop, d.x, trailBottom,
-                        Color.argb(0, 200, 225, 235),
-                        Color.argb((70 * alpha * (if (d.isSliding) 1f else d.trailAlpha)).toInt().coerceIn(0, 255), 200, 225, 235),
-                        Shader.TileMode.CLAMP
-                    )
-                    canvas.drawRect(d.x - d.radius * 0.16f, trailTop, d.x + d.radius * 0.16f, trailBottom, trailPaint)
+                    val length = trailBottom - trailTop
+                    trailPaint.shader = trailGradientFor(length)
+                    trailPaint.alpha = (255 * alpha * (if (d.isSliding) 1f else d.trailAlpha)).toInt().coerceIn(0, 255)
+                    canvas.withTranslation(d.x, trailTop) {
+                        drawRect(-d.radius * 0.16f, 0f, d.radius * 0.16f, length, trailPaint)
+                    }
                 }
             }
 
-            // Body: cool, glassy radial fill with a darker meniscus ring at the very edge.
-            // A sliding droplet stretches into a teardrop — the gradient shape stays circular,
-            // it's just clipped by a taller oval, which reads correctly without any shader math.
-            bodyPaint.shader = RadialGradient(
-                d.x - d.radius * 0.15f, d.y - d.radius * 0.15f, d.radius * 1.15f,
-                intArrayOf(
-                    Color.argb((90 * alpha).toInt(), 235, 245, 250),
-                    Color.argb((55 * alpha).toInt(), 200, 222, 232),
-                    Color.argb((120 * alpha).toInt(), 130, 165, 185)
-                ),
-                floatArrayOf(0f, 0.7f, 1f),
-                Shader.TileMode.CLAMP
-            )
+            bodyPaint.shader = bodyGradientFor(d.radius)
+            bodyPaint.alpha = globalAlpha
             val stretch = d.stretchFactor()
-            if (stretch > 1.01f) {
-                val rx = d.radius * (1f / kotlin.math.sqrt(stretch))
-                val ry = d.radius * stretch
-                canvas.drawOval(d.x - rx, d.y - ry, d.x + rx, d.y + ry, bodyPaint)
-            } else {
-                canvas.drawCircle(d.x, d.y, d.radius, bodyPaint)
+            canvas.withTranslation(d.x, d.y) {
+                if (stretch > 1.01f) {
+                    val rx = d.radius * (1f / sqrt(stretch))
+                    val ry = d.radius * stretch
+                    drawOval(-rx, -ry, rx, ry, bodyPaint)
+                } else {
+                    drawCircle(0f, 0f, d.radius, bodyPaint)
+                }
             }
 
-            // Primary highlight (main light reflection).
-            highlightPaint.shader = RadialGradient(
-                d.x + d.highlightOffsetX, d.y + d.highlightOffsetY, d.radius * 0.55f,
-                Color.argb((220 * alpha).toInt(), 255, 255, 255),
-                Color.argb(0, 255, 255, 255),
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawCircle(d.x + d.highlightOffsetX, d.y + d.highlightOffsetY, d.radius * 0.55f, highlightPaint)
+            highlightPaint.shader = highlightGradientFor(highlightGradientsA, 0.55f, d.radius, 220)
+            highlightPaint.alpha = globalAlpha
+            canvas.withTranslation(d.x + d.highlightOffsetX, d.y + d.highlightOffsetY) {
+                drawCircle(0f, 0f, d.radius * 0.55f, highlightPaint)
+            }
 
-            // Pseudo-refractive "caustic": a bright spot on the *opposite* bottom side
-            // that simulates light being focused through the droplet's lens.
             if (d.radius > 5f) {
-                highlightPaint.shader = RadialGradient(
-                    d.x - d.highlightOffsetX * 1.1f, d.y - d.highlightOffsetY * 1.1f, d.radius * 0.45f,
-                    Color.argb((110 * alpha).toInt(), 255, 255, 255),
-                    Color.argb(0, 255, 255, 255),
-                    Shader.TileMode.CLAMP
-                )
-                canvas.drawCircle(d.x - d.highlightOffsetX * 1.1f, d.y - d.highlightOffsetY * 1.1f, d.radius * 0.45f, highlightPaint)
+                highlightPaint.shader = highlightGradientFor(highlightGradientsB, 0.45f, d.radius, 110)
+                highlightPaint.alpha = globalAlpha
+                canvas.withTranslation(d.x - d.highlightOffsetX * 1.1f, d.y - d.highlightOffsetY * 1.1f) {
+                    drawCircle(0f, 0f, d.radius * 0.45f, highlightPaint)
+                }
             }
 
-            // Secondary, dimmer glint for extra glassy depth.
             if (d.radius > 6f) {
-                highlightPaint.shader = RadialGradient(
-                    d.x - d.highlightOffsetX * 0.7f, d.y - d.highlightOffsetY * 0.4f, d.radius * 0.28f,
-                    Color.argb((70 * alpha).toInt(), 255, 255, 255),
-                    Color.argb(0, 255, 255, 255),
-                    Shader.TileMode.CLAMP
-                )
-                canvas.drawCircle(d.x - d.highlightOffsetX * 0.7f, d.y - d.highlightOffsetY * 0.4f, d.radius * 0.28f, highlightPaint)
+                highlightPaint.shader = highlightGradientFor(highlightGradientsC, 0.28f, d.radius, 70)
+                highlightPaint.alpha = globalAlpha
+                canvas.withTranslation(d.x - d.highlightOffsetX * 0.7f, d.y - d.highlightOffsetY * 0.4f) {
+                    drawCircle(0f, 0f, d.radius * 0.28f, highlightPaint)
+                }
             }
         }
         bodyPaint.shader = null

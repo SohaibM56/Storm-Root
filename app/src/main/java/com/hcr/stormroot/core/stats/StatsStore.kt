@@ -16,8 +16,29 @@ object StatsStore {
     private val MODULES = listOf(MODULE_BEDTIME, MODULE_DOOMSCROLL, MODULE_ROOTS)
 
     private const val PREFS_NAME = "stats_store_prefs"
+    private const val RETENTION_DAYS = 60
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    // Every write key here ends in a yyyyMMdd day suffix (nudge_count_*, nudge_millis_*,
+    // bedtime_first_tod_*, effect_shown_*), and none of it is ever cleaned up otherwise, so this
+    // prefs file grows forever over the app's lifetime. Prune once per process per day instead.
+    private var lastPrunedDay: String? = null
+
+    private fun pruneOldEntriesIfNeeded(context: Context) {
+        val today = dayKey(System.currentTimeMillis())
+        if (lastPrunedDay == today) return
+        lastPrunedDay = today
+        val cutoffKey = dayKey(Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -RETENTION_DAYS) }.timeInMillis)
+        val p = prefs(context)
+        val toRemove = p.all.keys.filter { key ->
+            val suffix = key.takeLast(8)
+            suffix.length == 8 && suffix.all { it.isDigit() } && suffix < cutoffKey
+        }
+        if (toRemove.isNotEmpty()) {
+            p.edit { toRemove.forEach { remove(it) } }
+        }
+    }
 
     private fun dayKey(millis: Long): String = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date(millis))
 
@@ -32,6 +53,7 @@ object StatsStore {
     }
 
     fun recordNudgeSession(context: Context, module: String, startMillis: Long, endMillis: Long) {
+        pruneOldEntriesIfNeeded(context)
         if (endMillis <= startMillis) return
         val nextMidnight = startOfNextDay(startMillis)
         if (endMillis <= nextMidnight) {
@@ -93,6 +115,24 @@ object StatsStore {
         return (millis / 60_000L).toInt()
     }
 
+    // A minute at 15%-opacity Stage 1 shouldn't count the same as a minute at full-intensity
+    // Stage 3 towards "not calm" — callers report their current intensity each tick via
+    // recordNudgeIntensityTick, and this is what calmPercentForToday actually subtracts.
+    fun recordNudgeIntensityTick(context: Context, module: String, intensity: Float, tickMillis: Long) {
+        if (intensity <= 0f) return
+        val day = dayKey(System.currentTimeMillis())
+        val weightedMillis = (tickMillis * intensity.coerceIn(0f, 1f)).toLong()
+        val key = "nudge_weighted_millis_${module}_$day"
+        val p = prefs(context)
+        p.edit { putLong(key, p.getLong(key, 0L) + weightedMillis) }
+    }
+
+    private fun weightedMinutesForDay(context: Context, day: String): Int {
+        val p = prefs(context)
+        val millis = MODULES.sumOf { p.getLong("nudge_weighted_millis_${it}_$day", 0L) }
+        return (millis / 60_000L).toInt()
+    }
+
     fun totalNudgeCount(context: Context, days: Int, endOffsetDays: Int = 0): Int =
         dayKeysBack(days, endOffsetDays).sumOf { countForDay(context, it) }
 
@@ -106,11 +146,11 @@ object StatsStore {
         dayKeysBack(days, endOffsetDays).count { countForDay(context, it, MODULE_BEDTIME) > 0 }
 
     fun calmPercentForToday(context: Context): Int {
-        val nudgedMinutes = minutesForDay(context, dayKey(System.currentTimeMillis()))
+        val weightedNudgedMinutes = weightedMinutesForDay(context, dayKey(System.currentTimeMillis()))
         val now = Calendar.getInstance()
         val elapsedMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
         if (elapsedMinutes <= 0) return 100
-        val calmMinutes = (elapsedMinutes - nudgedMinutes).coerceAtLeast(0)
+        val calmMinutes = (elapsedMinutes - weightedNudgedMinutes).coerceAtLeast(0)
         return ((calmMinutes * 100f) / elapsedMinutes).roundToInt().coerceIn(0, 100)
     }
 
@@ -130,5 +170,20 @@ object StatsStore {
     fun percentImprovement(current: Int, previous: Int): Int? {
         if (previous <= 0) return null
         return (((previous - current).toFloat() / previous) * 100).roundToInt()
+    }
+
+    // Lightweight per-module/effect usage counter so it's possible to tell which overlay
+    // effects (fog, fire, snow, ...) are actually shown to users, not just which module fired.
+    fun recordEffectShown(context: Context, module: String, effect: String) {
+        pruneOldEntriesIfNeeded(context)
+        val day = dayKey(System.currentTimeMillis())
+        val key = "effect_shown_${module}_${effect}_$day"
+        val p = prefs(context)
+        p.edit { putInt(key, p.getInt(key, 0) + 1) }
+    }
+
+    fun effectShownCount(context: Context, module: String, effect: String, days: Int, endOffsetDays: Int = 0): Int {
+        val p = prefs(context)
+        return dayKeysBack(days, endOffsetDays).sumOf { day -> p.getInt("effect_shown_${module}_${effect}_$day", 0) }
     }
 }

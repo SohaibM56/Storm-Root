@@ -1,30 +1,55 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Storm Root</string>
 
+    <!-- TEST IDs (Google's official sample IDs, always serve test ads/fill). Swap both for the
+         real IDs issued by your own AdMob console before any Play Store submission. -->
+    <string name="admob_app_id" translatable="false">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="admob_rewarded_ad_unit_id" translatable="false">ca-app-pub-3940256099942544/5224354917</string>
+
     <string name="overlay_notification_title">Storm Root is active</string>
     <string name="overlay_notification_body">A gentle ambient layer is running in the background.</string>
 
+    <string name="usage_access_revoked_channel">Doomscroll blocking paused</string>
+    <string name="usage_access_revoked_title">Doomscroll nudges are paused</string>
+    <string name="usage_access_revoked_body">Usage Access was turned off, so Storm Root can\'t see your app usage anymore. Tap to re-enable it.</string>
+    <string name="overlay_snooze_action">Not now · 15 min</string>
+
     <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_close">Close</string>
     <string name="dialog_save">Save</string>
+
+    <string name="dialog_unlock_effect_title_format">Unlock %1$s</string>
+    <string name="dialog_unlock_effect_subtitle">Watch a short ad to use it for 3 days</string>
+    <string name="dialog_unlock_effect_watch_ad">Watch ad</string>
+    <string name="dialog_unlock_effect_loading">Loading ad…</string>
+    <string name="dialog_unlock_effect_ad_not_ready">Ad not ready yet — try again in a moment</string>
+    <string name="dialog_unlock_effect_no_internet">No internet connection — connect to watch an ad</string>
+    <string name="effect_locked_badge">Ads</string>
     <string name="dialog_sitting_threshold_title">Sitting threshold</string>
-    <string name="dialog_sitting_threshold_subtitle">Choose how long you can sit still before the vines start growing.</string>
+    <string name="dialog_sitting_threshold_subtitle">Set your stillness limit before vines grow.</string>
     <string name="dialog_doomscroll_apps_title">Overcast Mist apps</string>
     <string name="dialog_doomscroll_apps_subtitle">Select which apps count toward your daily scroll limit.</string>
     <string name="dialog_doomscroll_apps_loading">Loading apps…</string>
+    <string name="dialog_doomscroll_apps_empty">No apps found</string>
     <string name="dialog_doomscroll_limit_label">Daily limit</string>
+    <string name="dialog_doomscroll_limit_help">Scroll to set your daily doomscroll allowance.</string>
     <string name="module_title_minutes_suffix">(%1$d Minutes)</string>
-    <string name="dialog_bedtime_title">Bedtime</string>
+    <string name="dialog_bedtime_title">Bedtime Drift</string>
     <string name="dialog_bedtime_subtitle">Choose when your wind-down window starts.</string>
+    <string name="dialog_bedtime_time_label">Bedtime Drift</string>
+    <string name="dialog_bedtime_time_help">Scroll to set your bedtime hour and minute.</string>
 
     <string name="dialog_overlay_label">Overlay</string>
-    <string name="dialog_overlay_help">Which ambient visual shows on screen once this nudge kicks in.</string>
-    <string name="dialog_sitting_ramp_help">How long you can keep sitting past the threshold before the vines reach full growth.</string>
-    <string name="dialog_doomscroll_ramp_help">How long past your daily limit before the mist reaches full storm.</string>
-    <string name="dialog_bedtime_drift_help">How long the wind-down dims and warms your screen before it settles.</string>
+    <string name="dialog_overlay_help">Ambient visual shown once the nudge kicks in.</string>
+    <string name="dialog_sitting_ramp_help">Time past threshold before vines fully grow.</string>
+    <string name="dialog_doomscroll_ramp_help">Time past limit before the mist reaches full storm.</string>
+    <string name="dialog_bedtime_drift_help">Time the wind-down dims before it settles.</string>
     <string name="anchor_subtitle_with_overlay_format">%1$s · %2$s</string>
     <string name="dialog_bedtime_am">AM</string>
     <string name="dialog_bedtime_pm">PM</string>
     <string name="dialog_sitting_ramp_label">Time to full growth</string>
+    <string name="dialog_sitting_threshold_label">Sit Duration</string>
+    <string name="dialog_sitting_threshold_help">Scroll to set how long you can stay still.</string>
     <string name="dialog_doomscroll_ramp_label">Time to full storm</string>
     <string name="dialog_bedtime_drift_label">Drift window</string>
 
@@ -147,6 +172,8 @@
     <string name="preview_tab_sun_rays">Sun Rays</string>
     <string name="preview_tab_water_droplets">Water Droplets</string>
     <string name="preview_tab_dew_web">Dew Web</string>
+    <string name="preview_tab_fire">Fire</string>
+    <string name="preview_tab_starry_night">Starry Night</string>
     <string name="preview_caption_soft_mist">Fog drifts over screens</string>
     <string name="preview_caption_calm_vines">Calm vines wrap around screen edges</string>
     <string name="preview_caption_warm_glow">Storm rolls in over screens</string>
@@ -156,6 +183,8 @@
     <string name="preview_caption_sun_rays">Sunlight filters softly over screens</string>
     <string name="preview_caption_water_droplets">Droplets bead on screens like glass</string>
     <string name="preview_caption_dew_web">Dew glistens on a web over screens</string>
+    <string name="preview_caption_fire">A gentle fire glows over screens</string>
+    <string name="preview_caption_starry_night">Stars twinkle softly over screens</string>
     <string name="preview_strength_subtle">Subtle</string>
     <string name="preview_strength_balanced">Balanced</string>
     <string name="preview_strength_deep">Deep</string>

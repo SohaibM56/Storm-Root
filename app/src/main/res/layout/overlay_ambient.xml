@@ -44,4 +44,16 @@
         android:layout_height="match_parent"
         android:visibility="gone" />
 
+    <com.hcr.stormroot.core.overlay.FireOverlayView
+        android:id="@+id/fireView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <com.hcr.stormroot.core.overlay.NightSkyOverlayView
+        android:id="@+id/nightSkyView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
 </FrameLayout>

@@ -9,10 +9,13 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.Choreographer
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.sqrt
 import kotlin.random.Random
+import androidx.core.graphics.withTranslation
+import androidx.core.graphics.withSave
 
 class ButterflyOverlayView @JvmOverloads constructor(
     context: Context,
@@ -47,8 +50,6 @@ class ButterflyOverlayView @JvmOverloads constructor(
         var flapRandomOffset = 0f
         var bankTilt = 1f
         var forwardSpeed = 2f
-
-        // Where a RESTING butterfly is heading to perch, and whether it has arrived.
         var restTargetX = 0f
         var restTargetY = 0f
         var hasRestTarget = false
@@ -59,22 +60,22 @@ class ButterflyOverlayView @JvmOverloads constructor(
                 val edge = Random.nextInt(4)
                 val pad = 150f
                 when (edge) {
-                    0 -> { // Left
+                    0 -> {
                         x = -pad
                         y = Random.nextFloat() * height
                         targetAngle = 45f + Random.nextFloat() * 90f
                     }
-                    1 -> { // Right
+                    1 -> {
                         x = width + pad
                         y = Random.nextFloat() * height
                         targetAngle = 225f + Random.nextFloat() * 90f
                     }
-                    2 -> { // Top
+                    2 -> {
                         x = Random.nextFloat() * width
                         y = -pad
                         targetAngle = 135f + Random.nextFloat() * 90f
                     }
-                    3 -> { // Bottom
+                    3 -> {
                         x = Random.nextFloat() * width
                         y = height + pad
                         targetAngle = 315f + Random.nextFloat() * 90f
@@ -101,15 +102,15 @@ class ButterflyOverlayView @JvmOverloads constructor(
             stateTime = 50f + Random.nextFloat() * 100f
             
             val colors = intArrayOf(
-                Color.argb(baseAlpha, 255, 125, 0),    // Vivid Monarch Orange
-                Color.argb(baseAlpha, 255, 185, 0),    // Wild Tiger Gold
-                Color.argb(baseAlpha, 0, 150, 240),    // Blue Morpho Cerulean
-                Color.argb(baseAlpha, 190, 75, 210),   // Forest Emerald Violet
-                Color.argb(baseAlpha, 245, 242, 235),  // Velvet White Cabbage
-                Color.argb(baseAlpha, 139, 195, 74),   // Pale Leaf Green
-                Color.argb(baseAlpha, 233, 30, 99),    // Rose Pink Flutter
-                Color.argb(baseAlpha, 93, 64, 55),     // Organic Bark Wood Brown
-                Color.argb(baseAlpha, 0, 150, 136)     // Deep Teal Peacock
+                Color.argb(baseAlpha, 255, 125, 0),
+                Color.argb(baseAlpha, 255, 185, 0),
+                Color.argb(baseAlpha, 0, 150, 240),
+                Color.argb(baseAlpha, 190, 75, 210),
+                Color.argb(baseAlpha, 245, 242, 235),
+                Color.argb(baseAlpha, 139, 195, 74),
+                Color.argb(baseAlpha, 233, 30, 99),
+                Color.argb(baseAlpha, 93, 64, 55),
+                Color.argb(baseAlpha, 0, 150, 136)
             )
             color = colors[Random.nextInt(colors.size)]
             angle = targetAngle
@@ -138,8 +139,6 @@ class ButterflyOverlayView @JvmOverloads constructor(
                     isLanded = false
                     hasRestTarget = false
                 } else if (previousState == State.RESTING) {
-                    // Leaving a perch — pick a fresh wandering heading instead of reusing the
-                    // stale pre-landing target, which would cause an abrupt snap-turn.
                     targetAngle = Random.nextFloat() * 360f
                 }
             }
@@ -147,7 +146,6 @@ class ButterflyOverlayView @JvmOverloads constructor(
             if (state == State.RESTING) {
                 if (!isLanded) {
                     if (anchors.isEmpty()) {
-                        // No flowers/leaves on screen yet — settle in place rather than hover.
                         isLanded = true
                         restTargetX = x
                         restTargetY = y
@@ -168,7 +166,7 @@ class ButterflyOverlayView @JvmOverloads constructor(
                             speedX = 0f
                             speedY = 0f
                         } else {
-                            val desiredAngle = Math.toDegrees(Math.atan2(dx.toDouble(), -dy.toDouble())).toFloat()
+                            val desiredAngle = Math.toDegrees(atan2(dx.toDouble(), -dy.toDouble())).toFloat()
                             var turnDelta = desiredAngle - angle
                             while (turnDelta > 180) turnDelta -= 360
                             while (turnDelta < -180) turnDelta += 360
@@ -191,7 +189,6 @@ class ButterflyOverlayView @JvmOverloads constructor(
                     }
                 }
                 if (isLanded) {
-                    // Gentle idle wing motion while perched, with only a whisper of wind drift.
                     wingPhase += 0.015f
                     x += windEffect * 0.05f
                 }
@@ -228,7 +225,6 @@ class ButterflyOverlayView @JvmOverloads constructor(
                 bankTilt = (1.0f - (abs(turnDelta) / 90f)).coerceIn(0.4f, 1.0f)
             }
 
-            // Wrapping/Respawn logic: if it flies significantly off screen, respawn it at a random edge
             val out = 180f
             if (x < -out || x > width + out || y < -out || y > height + out) {
                 init(width, height, spawnAtEdge = true)
@@ -255,13 +251,11 @@ class ButterflyOverlayView @JvmOverloads constructor(
     var intensity: Float = 0.7f
         set(value) {
             field = value.coerceIn(0f, 1f)
-            // Update existing particles' alpha based on new intensity
-            particles.forEach { 
+            particles.forEach {
                 it.baseAlpha = (160 + (95 * field)).toInt().coerceIn(0, 255)
             }
-            // Dynamically adjust count if already animating
             if (isAnimating) {
-                val targetCount = (15 + 45 * field).toInt() // Increased from 8-28 to 15-60 butterflies for a rich density range
+                val targetCount = (15 + 45 * field).toInt()
                 adjustParticleCount(targetCount)
             }
         }
@@ -316,14 +310,12 @@ class ButterflyOverlayView @JvmOverloads constructor(
         setupParticlesIfReady()
     }
 
-    /** Scatters a handful of flowers/leaves for butterflies to fly between and land on. */
     private fun rebuildAnchors(w: Int, h: Int) {
         anchors.clear()
         if (w == 0 || h == 0) return
         val count = 8 + Random.nextInt(6)
         repeat(count) {
             val x = Random.nextFloat() * w
-            // Biased toward the lower two-thirds — foliage sits below flight height.
             val y = h * (0.35f + Random.nextFloat() * 0.6f)
             val kind = if (Random.nextFloat() < 0.55f) AnchorKind.FLOWER else AnchorKind.LEAF
             anchors.add(Anchor(x, y, kind, 0.7f + Random.nextFloat() * 0.8f, Random.nextFloat() * 360f, Random.nextInt(4)))
@@ -336,12 +328,11 @@ class ButterflyOverlayView @JvmOverloads constructor(
         val w = width
         val h = height
         if (w > 0 && h > 0) {
-            // Update global atmospheric fluid wind phase time counter
             globalWindTime += 0.03f
             val calculatedWind = sin(globalWindTime.toDouble()).toFloat() * 0.8f
 
-            for (i in 0 until particles.size) {
-                particles[i].update(w, h, calculatedWind, anchors)
+            for (element in particles) {
+                element.update(w, h, calculatedWind, anchors)
             }
             invalidate()
         }
@@ -354,61 +345,60 @@ class ButterflyOverlayView @JvmOverloads constructor(
         drawAnchors(canvas)
         if (particles.isEmpty()) return
 
-        for (i in 0 until particles.size) {
-            val p = particles[i]
+        for (element in particles) {
+            val p = element
             
-            // 1. Draw Altitude-Aware Shadow Pass
             if (p.state != ButterflyParticle.State.RESTING) {
-                canvas.save()
-                
-                // Shadow drifts further, scales up, and fades as the butterfly "climbs" (higher scale)
-                val heightFactor = (p.scale - p.baseScale + 0.25f) / 0.5f 
-                val shadowOffset = (12f + 25f * heightFactor) * p.scale
-                val shadowAlpha = (45 * (1f - heightFactor * 0.5f)).toInt().coerceIn(0, 255)
-                
-                shadowPaint.alpha = shadowAlpha
-                
-                canvas.translate(p.x + shadowOffset, p.y + shadowOffset)
-                canvas.rotate(p.angle)
-                canvas.scale(p.scale * p.bankTilt * (1f + heightFactor * 0.1f), p.scale * (1f + heightFactor * 0.1f))
-                
-                drawButterflyShapes(canvas, p, shadowPaint)
-                canvas.restore()
+                canvas.withSave {
+
+                    val heightFactor = (p.scale - p.baseScale + 0.25f) / 0.5f
+                    val shadowOffset = (12f + 25f * heightFactor) * p.scale
+                    val shadowAlpha = (45 * (1f - heightFactor * 0.5f)).toInt().coerceIn(0, 255)
+
+                    shadowPaint.alpha = shadowAlpha
+
+                    translate(p.x + shadowOffset, p.y + shadowOffset)
+                    rotate(p.angle)
+                    scale(
+                        p.scale * p.bankTilt * (1f + heightFactor * 0.1f),
+                        p.scale * (1f + heightFactor * 0.1f)
+                    )
+
+                    drawButterflyShapes(this, p, shadowPaint)
+                }
             }
 
-            // 2. Draw Butterfly Pass with Dynamic Lighting
-            canvas.save()
-            canvas.translate(p.x, p.y)
-            canvas.rotate(p.angle)
-            
-            val effectiveBank = if (p.state == ButterflyParticle.State.RESTING) 1f else p.bankTilt
-            canvas.scale(p.scale * effectiveBank, p.scale)
-            
-            drawButterflyShapes(canvas, p, paint)
-            canvas.restore()
+            canvas.withTranslation(p.x, p.y) {
+                rotate(p.angle)
+
+                val effectiveBank =
+                    if (p.state == ButterflyParticle.State.RESTING) 1f else p.bankTilt
+                scale(p.scale * effectiveBank, p.scale)
+
+                drawButterflyShapes(this, p, paint)
+            }
         }
     }
 
     private fun drawAnchors(canvas: Canvas) {
         for (a in anchors) {
-            canvas.save()
-            canvas.translate(a.x, a.y)
-            canvas.rotate(a.rotation)
-            canvas.scale(a.scale, a.scale)
-            when (a.kind) {
-                AnchorKind.FLOWER -> drawFlower(canvas, a.hue)
-                AnchorKind.LEAF -> drawSmallLeaf(canvas)
+            canvas.withTranslation(a.x, a.y) {
+                rotate(a.rotation)
+                scale(a.scale, a.scale)
+                when (a.kind) {
+                    AnchorKind.FLOWER -> drawFlower(this, a.hue)
+                    AnchorKind.LEAF -> drawSmallLeaf(this)
+                }
             }
-            canvas.restore()
         }
     }
 
     private fun drawFlower(canvas: Canvas, hue: Int) {
         val petalColors = intArrayOf(
-            Color.rgb(255, 170, 200), // pink
-            Color.rgb(255, 210, 90),  // yellow
-            Color.rgb(200, 160, 255), // lavender
-            Color.rgb(255, 255, 255)  // white
+            Color.rgb(255, 170, 200),
+            Color.rgb(255, 210, 90),
+            Color.rgb(200, 160, 255),
+            Color.rgb(255, 255, 255)
         )
         anchorPaint.color = petalColors[hue % petalColors.size]
         for (i in 0 until 5) {
@@ -436,11 +426,9 @@ class ButterflyOverlayView @JvmOverloads constructor(
         val originalStyle = targetPaint.style
         val originalStrokeWidth = targetPaint.strokeWidth
         
-        // Dynamic wing flap factor based on sinusoidal wave phase
         val flapFactor = abs(sin(p.wingPhase.toDouble())).toFloat()
 
         if (targetPaint == paint) {
-            // DYNAMIC LIGHTING: Brighten color when wings are open, darken when closed
             val lightFactor = 0.8f + (flapFactor * 0.4f) 
             val r = (Color.red(p.color) * lightFactor).toInt().coerceIn(0, 255)
             val g = (Color.green(p.color) * lightFactor).toInt().coerceIn(0, 255)
@@ -448,7 +436,6 @@ class ButterflyOverlayView @JvmOverloads constructor(
             targetPaint.color = Color.argb(p.baseAlpha, r, g, b)
         }
 
-        // 1. Draw Wing Base Shapes
         path.reset()
         path.moveTo(0f, 0f)
         path.cubicTo(-15f * flapFactor, -30f * p.aspectDifference, -40f * flapFactor, -25f, -30f * flapFactor, -5f)
@@ -461,14 +448,11 @@ class ButterflyOverlayView @JvmOverloads constructor(
         path.cubicTo(35f * flapFactor, 10f, 15f * flapFactor, 22f * p.aspectDifference, 0f, 0f)
         canvas.drawPath(path, targetPaint)
 
-        // 2. Draw Realistic Patterns (only for main pass)
         if (targetPaint == paint) {
-            // Draw Wing Edge Borders (Many butterflies have dark borders)
             targetPaint.style = Paint.Style.STROKE
             targetPaint.strokeWidth = 1.5f
             targetPaint.color = Color.argb((p.baseAlpha * 0.7f).toInt(), 10, 10, 10)
             
-            // Re-draw paths as stroke for borders
             path.reset()
             path.moveTo(0f, 0f)
             path.cubicTo(-15f * flapFactor, -30f * p.aspectDifference, -40f * flapFactor, -25f, -30f * flapFactor, -5f)
@@ -481,20 +465,18 @@ class ButterflyOverlayView @JvmOverloads constructor(
             path.cubicTo(35f * flapFactor, 10f, 15f * flapFactor, 22f * p.aspectDifference, 0f, 0f)
             canvas.drawPath(path, targetPaint)
 
-            // Draw White "Pearls" (Tiny dots on the dark borders like Monarchs)
             targetPaint.style = Paint.Style.FILL
             targetPaint.color = Color.argb((p.baseAlpha * 0.8f).toInt(), 255, 255, 240)
             val dotSize = 1.2f
-            // Top Edge Dots
+
             canvas.drawCircle(-25f * flapFactor, -22f * p.aspectDifference, dotSize, targetPaint)
             canvas.drawCircle(-32f * flapFactor, -12f, dotSize, targetPaint)
             canvas.drawCircle(25f * flapFactor, -22f * p.aspectDifference, dotSize, targetPaint)
             canvas.drawCircle(32f * flapFactor, -12f, dotSize, targetPaint)
-            // Bottom Edge Dots
+
             canvas.drawCircle(-22f * flapFactor, 12f * p.aspectDifference, dotSize, targetPaint)
             canvas.drawCircle(22f * flapFactor, 12f * p.aspectDifference, dotSize, targetPaint)
 
-            // Draw Internal Veins (Atmospheric detail)
             targetPaint.color = Color.argb((p.baseAlpha * 0.4f).toInt(), 10, 10, 10)
             targetPaint.style = Paint.Style.STROKE
             targetPaint.strokeWidth = 0.8f
@@ -505,7 +487,6 @@ class ButterflyOverlayView @JvmOverloads constructor(
             path.moveTo(8f * flapFactor, -4f); path.quadTo(20f * flapFactor, -8f, 26f * flapFactor, -4f)
             canvas.drawPath(path, targetPaint)
 
-            // Draw Eyespots (Organic defense patterns)
             targetPaint.style = Paint.Style.FILL
             targetPaint.color = Color.argb((p.baseAlpha * 0.6f).toInt(), 30, 30, 30)
             canvas.drawCircle(-18f * flapFactor, -8f, 2.5f, targetPaint)
@@ -517,7 +498,6 @@ class ButterflyOverlayView @JvmOverloads constructor(
             targetPaint.color = Color.argb(p.baseAlpha, 20, 20, 20)
         }
 
-        // 3. Draw Body Anatomy
         targetPaint.style = Paint.Style.FILL
         path.reset()
         path.moveTo(0f, -15f)
@@ -526,10 +506,8 @@ class ButterflyOverlayView @JvmOverloads constructor(
         path.quadTo(2f, 0f, 0f, -15f)
         canvas.drawPath(path, targetPaint)
 
-        // Draw circular head distinct from the body thorax
         canvas.drawCircle(0f, -18f, 3f, targetPaint)
 
-        // 4. Antennas (only for main pass for visibility)
         if (targetPaint == paint) {
             targetPaint.style = Paint.Style.STROKE
             targetPaint.strokeWidth = 0.8f

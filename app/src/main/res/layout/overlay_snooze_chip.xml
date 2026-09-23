@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.textview.MaterialTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/snoozeChipText"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_pill_gray"
+    android:foreground="@drawable/ripple_pill_mask"
+    android:paddingHorizontal="@dimen/_20sdp"
+    android:paddingVertical="@dimen/_10sdp"
+    android:elevation="@dimen/_8sdp"
+    android:clickable="true"
+    android:focusable="true"
+    android:text="@string/overlay_snooze_action"
+    android:textColor="@color/text_primary"
+    android:textSize="@dimen/_12ssp"
+    android:textStyle="bold" />

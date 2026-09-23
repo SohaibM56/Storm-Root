@@ -13,6 +13,9 @@ import kotlin.random.Random
 import androidx.core.graphics.withTranslation
 import androidx.core.graphics.toColorInt
 import kotlin.math.atan2
+import androidx.core.graphics.createBitmap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class RootsOverlayView @JvmOverloads constructor(
     context: Context,
@@ -20,11 +23,6 @@ class RootsOverlayView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     private companion object {
-        // Root generation (branch count, control-point jitter, leaf/moss sizes) was tuned
-        // for a full-screen overlay around this tall. Views shorter than that (e.g. the
-        // in-app preview panel) get everything scaled down proportionally, otherwise the
-        // same absolute-pixel jitter overwhelms much shorter path lengths and the vines
-        // loop back on themselves into a dense, unreadable clump.
         const val REFERENCE_HEIGHT_PX = 1600f
         const val MIN_SIZE_SCALE = 0.32f
     }
@@ -73,6 +71,11 @@ class RootsOverlayView @JvmOverloads constructor(
     private val mainHandler = Handler(Looper.getMainLooper())
     private var generationId = 0
 
+    // Reused across calls instead of spawning a raw Thread per scheduleGenerateRoots() call —
+    // onSizeChanged can fire repeatedly during rotation/resize, which previously spawned a new
+    // concurrent thread each time.
+    private var generationExecutor: ExecutorService? = null
+
     private val pos = FloatArray(2)
     private val tan = FloatArray(2)
 
@@ -107,15 +110,10 @@ class RootsOverlayView @JvmOverloads constructor(
     private data class MossSpot(val distance: Float, val size: Float, val offset: Float)
     private data class BarkRidge(val distance: Float, val side: Float, val lengthScale: Float, val skew: Float, val dark: Boolean)
 
-    /** Shows the vines immediately at the current [growth] level — no growth ramp, no wind
-     *  sway. Rendering is fully static once baked. */
     fun start() {
         scheduleGenerateRoots()
     }
 
-    /** Path/branch generation is too heavy to run on the UI thread without a jank spike on
-     *  first show or rotation, so it's built on a background thread and swapped in on the
-     *  main thread once ready. */
     private fun scheduleGenerateRoots() {
         val w = viewWidth
         val h = viewHeight
@@ -123,7 +121,8 @@ class RootsOverlayView @JvmOverloads constructor(
         if (w == 0 || h == 0) return
 
         val myGenerationId = ++generationId
-        Thread {
+        val executor = generationExecutor ?: Executors.newSingleThreadExecutor().also { generationExecutor = it }
+        executor.execute {
             val generated = buildRoots(w, h, scale)
             mainHandler.post {
                 if (myGenerationId != generationId) {
@@ -135,7 +134,7 @@ class RootsOverlayView @JvmOverloads constructor(
                 roots.addAll(generated)
                 invalidate()
             }
-        }.start()
+        }
     }
 
     private fun buildRoots(w: Int, h: Int, scale: Float): List<Root> {
@@ -147,9 +146,6 @@ class RootsOverlayView @JvmOverloads constructor(
 
         val mainRootCount = (18 * scale).toInt().coerceAtLeast(5)
         repeat(mainRootCount) { index ->
-            // Real growth doesn't fan out from one exact point on the ground — scatter each
-            // root's origin along the bottom edge, and break the perfectly even 12° spacing
-            // with a little jitter so the whole cluster doesn't read as machine-generated.
             val originX = centerX + (random.nextFloat() - 0.5f) * w * 0.5f
             val targetAngle = -90f + (index - (mainRootCount - 1) / 2f) * 12f + (random.nextFloat() - 0.5f) * 5f
             val totalLength = h * (0.85f + random.nextFloat() * 0.4f)
@@ -167,7 +163,7 @@ class RootsOverlayView @JvmOverloads constructor(
                 val tTan = FloatArray(2)
                 mainMeasure.getPosTan(bStartDist, tPos, tTan)
 
-                val baseAngle = Math.toDegrees(Math.atan2(tTan[1].toDouble(), tTan[0].toDouble())).toFloat()
+                val baseAngle = Math.toDegrees(atan2(tTan[1].toDouble(), tTan[0].toDouble())).toFloat()
                 val bAngle = baseAngle + (if (random.nextBoolean()) 60f else -60f) + (random.nextFloat() - 0.5f) * 40f
                 val bLen = mainLen * (0.25f + random.nextFloat() * 0.35f)
 
@@ -182,6 +178,8 @@ class RootsOverlayView @JvmOverloads constructor(
 
     fun stop() {
         generationId++
+        generationExecutor?.shutdownNow()
+        generationExecutor = null
         roots.forEach {
             it.cachedBitmap?.recycle()
             it.cachedBitmap = null
@@ -218,7 +216,7 @@ class RootsOverlayView @JvmOverloads constructor(
             
             var curX = pos[0]
             var curY = pos[1]
-            val baseAngle = Math.toDegrees(Math.atan2(tan[1].toDouble(), tan[0].toDouble())).toFloat()
+            val baseAngle = Math.toDegrees(atan2(tan[1].toDouble(), tan[0].toDouble())).toFloat()
             
             repeat(10) { step ->
                 val spiral = sin(step.toDouble() * 1.5).toFloat() * 20f
@@ -233,8 +231,6 @@ class RootsOverlayView @JvmOverloads constructor(
             tendrils.add(Tendril(tPath, tMeasure, tMeasure.length, tStartDist))
         }
 
-        // Generate moss spots — moss favors the damp, shaded base of a plant far more than
-        // the newer growth near the tip, so bias distance toward the root's start.
         val mossSpots = mutableListOf<MossSpot>()
         repeat(15) {
             mossSpots.add(MossSpot(
@@ -246,8 +242,6 @@ class RootsOverlayView @JvmOverloads constructor(
 
         val leaves = generateLeaves(measure, random, scale)
 
-        // Bark ridges: short cross-grain ticks scattered along the whole stem, alternating
-        // light/dark, so the body reads as grooved wood rather than a flat colored tube.
         val barkRidges = mutableListOf<BarkRidge>()
         var barkDist = len * 0.02f
         while (barkDist < len * 0.99f) {
@@ -271,8 +265,6 @@ class RootsOverlayView @JvmOverloads constructor(
         bounds.inset(-120f, -120f)
 
         val hueShift = (random.nextFloat() - 0.5f) * 18f
-        // Individual vines are thicker or thinner than their neighbors, like real plants —
-        // not every stem in a cluster grows at the same rate.
         val thicknessScale = 0.75f + random.nextFloat() * 0.5f
         return Root(path, measure, len, startGrowth, leaves, tendrils, mossSpots, barkRidges, bounds, depth, hueShift, thicknessScale)
     }
@@ -282,8 +274,7 @@ class RootsOverlayView @JvmOverloads constructor(
         val len = measure.length
         var dist = len * 0.12f
         while (dist < len * 0.97f) {
-            // Newer growth near the tip carries denser, larger leaves; the older base is
-            // sparser and smaller — real vines don't foliate uniformly along their length.
+
             val progress = dist / len
             val presence = 0.5f + 0.5f * progress
             if (random.nextFloat() < presence) {
@@ -328,13 +319,9 @@ class RootsOverlayView @JvmOverloads constructor(
                 val angleJitter = (random.nextFloat() - 0.5f) * 20f + wind
                 val angle = Math.toRadians((targetAngle + angleJitter).toDouble())
 
-                val nextX = curX + (Math.cos(angle) * stepLen).toFloat()
-                val nextY = curY + (Math.sin(angle) * stepLen).toFloat()
+                val nextX = curX + (cos(angle) * stepLen).toFloat()
+                val nextY = curY + (sin(angle) * stepLen).toFloat()
 
-                // Control-point wobble must shrink with the view, otherwise it overshoots a
-                // much shorter step distance and the curve loops back on itself instead of
-                // gently waving (the bug that made vines clump into an unreadable mass
-                // inside the small preview panel).
                 val ctrlX = (curX + nextX) / 2f + (random.nextFloat() - 0.5f) * 80f * scale
                 val ctrlY = (curY + nextY) / 2f + (random.nextFloat() - 0.5f) * 80f * scale
 
@@ -357,10 +344,6 @@ class RootsOverlayView @JvmOverloads constructor(
 
             if (effectiveGrowth <= 0f) return@forEach
 
-            // Bake the vine into a bitmap and reuse it until the tip has actually moved a
-            // visible amount — tying the bucket to on-screen pixels (rather than a fixed
-            // count across the whole 0..1 range) keeps long vines growing smoothly while
-            // still avoiding a re-bake every single frame.
             val pxPerBucket = 1.5f * density
             val bucket = (effectiveGrowth * root.length / pxPerBucket).toInt()
             if (root.cachedBitmap == null || root.cachedBucket != bucket) {
@@ -377,7 +360,7 @@ class RootsOverlayView @JvmOverloads constructor(
         val height = root.bounds.height().toInt().coerceAtLeast(1)
 
         val bitmap = root.cachedBitmap?.takeIf { it.width == width && it.height == height && !it.isRecycled }
-            ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { fresh ->
+            ?: createBitmap(width, height).also { fresh ->
                 root.cachedBitmap?.recycle()
                 root.cachedBitmap = fresh
             }
@@ -391,8 +374,6 @@ class RootsOverlayView @JvmOverloads constructor(
         val bodyColor = jitterColor("#2E4C23".toColorInt(), root.hueShift)
         val highlightColor = jitterColor("#4A7A36".toColorInt(), root.hueShift)
 
-        // Pass 0: Soft contact shadow, offset down-right and blurred — grounds the vine
-        // against whatever's behind it instead of reading as a flat sticker pasted on top.
         revealPath.reset()
         root.measure.getSegment(0f, distance, revealPath, true)
         paint.color = Color.argb((90 * effectiveGrowth * depthFade).toInt().coerceIn(0, 255), 12, 18, 8)
@@ -403,14 +384,11 @@ class RootsOverlayView @JvmOverloads constructor(
         }
         paint.maskFilter = null
 
-        // Pass 1: Bark Texture/Body with Highlights and Shadows
         val steps = 50
         val stepDist = distance / steps
         for (i in 0 until steps) {
             val start = i * stepDist
             val end = (i + 1) * stepDist
-            // Eased taper: stays thick near the base and thins out faster near the tip,
-            // like a real root, instead of a straight linear shrink.
             val eased = (i.toFloat() / steps).pow(1.6f)
 
             revealPath.reset()
@@ -428,10 +406,39 @@ class RootsOverlayView @JvmOverloads constructor(
             bakeCanvas.drawPath(revealPath, paint)
         }
 
-        // Pass 1.5: Bark grain — short cross-grain ticks scattered over the body so the
-        // stem reads as grooved wood rather than a flat colored tube.
-        val barkDark = jitterColor("#1B2C12".toColorInt(), root.hueShift)
-        val barkLight = jitterColor("#6B9950".toColorInt(), root.hueShift)
+        // Wood grain streaks running along the branch length — two wavy, semi-transparent brown
+        // lines offset from the centerline by the branch's thickness, so thicker/older sections
+        // read as woody stems instead of a uniform flat-green vine.
+        val grainColor = jitterColor("#5A3A22".toColorInt(), root.hueShift)
+        val grainSteps = 40
+        val grainStepDist = distance / grainSteps
+        listOf(-1f, 1f).forEach { side ->
+            val grainPath = Path()
+            var started = false
+            for (i in 0..grainSteps) {
+                val d = (i * grainStepDist).coerceAtMost(distance)
+                root.measure.getPosTan(d, pos, tan)
+                val tanAngle = atan2(tan[1], tan[0])
+                val normalAngle = tanAngle + (Math.PI / 2).toFloat()
+                val wave = sin(d * 0.05f + side) * 1.2f * density
+                val offset = (2.2f * root.thicknessScale * density + wave) * side
+                val px = pos[0] + cos(normalAngle) * offset
+                val py = pos[1] + sin(normalAngle) * offset
+                if (!started) {
+                    grainPath.moveTo(px, py)
+                    started = true
+                } else {
+                    grainPath.lineTo(px, py)
+                }
+            }
+            paint.color = grainColor
+            paint.strokeWidth = 0.7f * density
+            paint.alpha = (70 * effectiveGrowth * depthFade).toInt().coerceIn(0, 255)
+            bakeCanvas.drawPath(grainPath, paint)
+        }
+
+        val barkDark = jitterColor("#3E2A18".toColorInt(), root.hueShift)
+        val barkLight = jitterColor("#8B6239".toColorInt(), root.hueShift)
         root.barkRidges.forEach { ridge ->
             if (ridge.distance > distance) return@forEach
             root.measure.getPosTan(ridge.distance, pos, tan)
@@ -449,8 +456,6 @@ class RootsOverlayView @JvmOverloads constructor(
             bakeCanvas.drawLine(pos[0], pos[1], pos[0] + dx, pos[1] + dy, barkPaint)
         }
 
-        // Growth-tip glow: a soft highlight at the actively growing tip while it's still
-        // extending, so growth reads as living rather than a static reveal.
         if (effectiveGrowth in 0.001f..0.999f) {
             root.measure.getPosTan(distance, pos, tan)
             val glowRadius = 10f * density
@@ -501,8 +506,6 @@ class RootsOverlayView @JvmOverloads constructor(
             rotate(angle + (if (leaf.isLeft) -60f else 60f) + leaf.rotation)
 
             val leafSize = 18f * leaf.sizeScale * density
-            // Three silhouettes (round, standard, pointed) so leaves don't all read as
-            // identical stamped shapes.
             val leafWidth = when (leaf.variant) {
                 0 -> leafSize * 0.85f
                 1 -> leafSize * 0.7f
@@ -559,7 +562,6 @@ class RootsOverlayView @JvmOverloads constructor(
                 val dx = drop.x * leafSize * 0.7f + leafSize * 0.15f
                 val dy = (drop.y - 0.5f) * leafSize * 0.4f
                 drawCircle(dx, dy, 1.5f * density, dewPaint)
-                // Tiny highlight on dew drop
                 paint.color = Color.WHITE
                 paint.strokeWidth = 0.5f * density
                 paint.alpha = (255 * growth).toInt()

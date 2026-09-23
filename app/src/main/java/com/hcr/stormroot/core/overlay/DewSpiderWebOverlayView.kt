@@ -15,23 +15,19 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
 import kotlin.random.Random
+import androidx.core.graphics.withTranslation
+import androidx.core.graphics.withSave
 
-/**
- * A spider web anchored in a corner with tiny dew droplets sitting at the silk intersections,
- * each catching the light with its own slow, independent twinkle — like morning light on webs.
- */
 class DewSpiderWebOverlayView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
 ) : View(context, attrs), Choreographer.FrameCallback {
 
-    /** [angleDeg] is the local silk direction at this point — droplets bead elongated along it. */
     private class Droplet(val x: Float, val y: Float, val radius: Float, val angleDeg: Float) {
         var twinklePhase = Random.nextFloat() * Math.PI.toFloat() * 2f
         val twinkleSpeed = 0.01f + Random.nextFloat() * 0.02f
     }
 
-    /** A single silk strand with its own hand-spun thickness/opacity so the web isn't uniform. */
     private class Thread(val path: Path, val alpha: Int, val strokeWidth: Float)
 
     private val threads = ArrayList<Thread>()
@@ -44,7 +40,7 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
     private val dropletPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val pollenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.rgb(230, 210, 150) // Golden-brown pollen
+        color = Color.rgb(230, 210, 150)
     }
 
     private var isAnimating = false
@@ -53,6 +49,32 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
     private var swayPhase = 0f
     private var vibrationPhase = 0f
     private val pollenList = ArrayList<PointF>()
+
+    // Cached by (radius, twinkle) bucket so onDraw doesn't allocate a RadialGradient per
+    // droplet per frame — twinkle is quantized to 16 steps, which is imperceptible.
+    private val dropletGradients = HashMap<Int, RadialGradient>()
+
+    private fun dropletGradientFor(radius: Float, twinkle: Float): RadialGradient {
+        val radiusKey = (radius * 4f).toInt()
+        val twinkleKey = (twinkle * 16f).toInt().coerceIn(0, 16)
+        val key = radiusKey * 32 + twinkleKey
+        return dropletGradients.getOrPut(key) {
+            val r = radiusKey / 4f
+            val t = twinkleKey / 16f
+            val glintAlpha = (140 + 115 * t).toInt().coerceIn(0, 255)
+            RadialGradient(
+                -r * 0.25f, -r * 0.3f, r * 1.3f,
+                intArrayOf(
+                    Color.argb(glintAlpha, 255, 255, 255),
+                    Color.argb((70 * (0.5f + 0.5f * t)).toInt(), 220, 235, 240),
+                    Color.argb((180 * (0.4f + 0.6f * t)).toInt(), 255, 255, 255),
+                    Color.argb(0, 220, 235, 240)
+                ),
+                floatArrayOf(0f, 0.45f, 0.96f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+    }
 
     var intensity: Float = 0.7f
         set(value) {
@@ -84,9 +106,8 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
 
         threads.clear()
         droplets.clear()
-        val intersections = ArrayList<Triple<Float, Float, Float>>() // x, y, local silk angle (deg)
+        val intersections = ArrayList<Triple<Float, Float, Float>>()
 
-        // Anchored precisely in the top-right corner
         centerX = w.toFloat()
         centerY = 0f
 
@@ -102,7 +123,6 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
             Math.toRadians(deg.toDouble()).toFloat()
         }
 
-        // Ring radii aren't evenly spaced — real webs bunch some rings closer than others.
         val ringRadii = FloatArray(ringCount) { r ->
             val t = (r + 1f) / ringCount
             val eased = t * t * (3f - 2f * t) // smoothstep
@@ -115,7 +135,6 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
             threads.add(Thread(path, alpha, width))
         }
 
-        // Spokes (straight lines from the anchor point out to the last ring).
         for (angleIdx in spokeAngles.indices) {
             val angle = spokeAngles[angleIdx]
             val path = Path()
@@ -125,7 +144,6 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
             addThread(path)
         }
 
-        // Rings connect adjacent spokes at each radius with a gentle outward sag, like real silk.
         val perSpokeJitter = Array(ringCount) { FloatArray(spokeCount) { 0.9f + Random.nextFloat() * 0.2f } }
         for (r in 0 until ringCount) {
             val path = Path()
@@ -149,7 +167,6 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
 
                 intersections.add(Triple(x, y, angleDeg))
 
-                // Dew mostly collects at the silk intersections, not on every single one.
                 if (Random.nextFloat() < 0.72f) {
                     val depthFactor = radius / maxRadius
                     val dropRadius = 1.4f + depthFactor * 3.2f + Random.nextFloat() * 1.2f
@@ -159,7 +176,6 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
             addThread(path)
         }
 
-        // Significant increase in faint, stray "gossamer" threads to create a "cobweb" effect.
         val strayCount = 15 + (25 * intensity).toInt()
         repeat(strayCount) {
             val a = intersections.random()
@@ -186,7 +202,6 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
             addThread(path, faint = true)
         }
 
-        // Add some pollen particles trapped in the web
         pollenList.clear()
         repeat(5 + (8 * intensity).toInt()) {
             val p = intersections.random()
@@ -197,7 +212,6 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
 
     override fun doFrame(frameTimeNanos: Long) {
         if (!isAnimating) return
-        // Sway speed increases with intensity to simulate stronger wind
         swayPhase += 0.005f + (0.008f * intensity)
         vibrationPhase += 0.45f + (0.3f * intensity)
         for (d in droplets) d.twinklePhase += d.twinkleSpeed
@@ -209,53 +223,41 @@ class DewSpiderWebOverlayView @JvmOverloads constructor(
         super.onDraw(canvas)
         if (threads.isEmpty()) return
 
-        canvas.save()
-        // Amplitude increases with intensity for a more "blown" look
-        val maxSway = 1.0f + 3.5f * intensity
-        val swayDeg = sin(swayPhase.toDouble()).toFloat() * maxSway
-        val microVib = sin(vibrationPhase.toDouble()).toFloat() * (0.05f + 0.05f * intensity)
-        canvas.rotate(swayDeg + microVib, centerX, centerY)
+        canvas.withSave {
+            val maxSway = 1.0f + 3.5f * intensity
+            val swayDeg = sin(swayPhase.toDouble()).toFloat() * maxSway
+            val microVib = sin(vibrationPhase.toDouble()).toFloat() * (0.05f + 0.05f * intensity)
+            rotate(swayDeg + microVib, centerX, centerY)
 
-        for (t in threads) {
-            threadPaint.alpha = t.alpha
-            threadPaint.strokeWidth = t.strokeWidth
-            canvas.drawPath(t.path, threadPaint)
+            for (t in threads) {
+                threadPaint.alpha = t.alpha
+                threadPaint.strokeWidth = t.strokeWidth
+                drawPath(t.path, threadPaint)
+            }
+
+            for (p in pollenList) {
+                pollenPaint.alpha = 100 + Random.nextInt(60)
+                drawCircle(p.x, p.y, 0.8f + Random.nextFloat() * 0.6f, pollenPaint)
+            }
+
+            for (d in droplets) {
+                val twinkle = (sin(d.twinklePhase.toDouble()).toFloat() + 1f) / 2f
+
+                withTranslation(d.x, d.y) {
+                    rotate(d.angleDeg)
+
+                    dropletPaint.shader = dropletGradientFor(d.radius, twinkle)
+                    drawOval(
+                        -d.radius * 1.2f,
+                        -d.radius * 0.85f,
+                        d.radius * 1.2f,
+                        d.radius * 0.85f,
+                        dropletPaint
+                    )
+                }
+            }
+            dropletPaint.shader = null
         }
-
-        // Draw pollen particles
-        for (p in pollenList) {
-            pollenPaint.alpha = 100 + Random.nextInt(60)
-            canvas.drawCircle(p.x, p.y, 0.8f + Random.nextFloat() * 0.6f, pollenPaint)
-        }
-
-        for (d in droplets) {
-            val twinkle = (sin(d.twinklePhase.toDouble()).toFloat() + 1f) / 2f
-            val glintAlpha = (140 + 115 * twinkle).toInt().coerceIn(0, 255)
-
-            // Beads elongate slightly along the silk direction rather than sitting as perfect
-            // circles — drawn in local space (translate+rotate) so the gradient isn't
-            // double-transformed by the canvas matrix.
-            canvas.save()
-            canvas.translate(d.x, d.y)
-            canvas.rotate(d.angleDeg)
-            
-            // Fresnel-enhanced gradient: sharp rim light on the edge opposite to the glint
-            dropletPaint.shader = RadialGradient(
-                -d.radius * 0.25f, -d.radius * 0.3f, d.radius * 1.3f,
-                intArrayOf(
-                    Color.argb(glintAlpha, 255, 255, 255), // Glint
-                    Color.argb((70 * (0.5f + 0.5f * twinkle)).toInt(), 220, 235, 240), // Body
-                    Color.argb((180 * (0.4f + 0.6f * twinkle)).toInt(), 255, 255, 255), // Fresnel edge
-                    Color.argb(0, 220, 235, 240)
-                ),
-                floatArrayOf(0f, 0.45f, 0.96f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawOval(-d.radius * 1.2f, -d.radius * 0.85f, d.radius * 1.2f, d.radius * 0.85f, dropletPaint)
-            canvas.restore()
-        }
-        dropletPaint.shader = null
-        canvas.restore()
     }
 
     override fun onDetachedFromWindow() {

@@ -14,6 +14,7 @@ import com.hcr.stormroot.R
 import com.hcr.stormroot.core.stats.StatsStore
 import com.hcr.stormroot.databinding.FragmentInsightsBinding
 import com.hcr.stormroot.databinding.ItemWeekDayBinding
+import com.hcr.stormroot.ui.dialogs.MinutesFormatter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -95,7 +96,13 @@ class InsightsFragment : Fragment() {
                 Period.MONTH -> R.string.insights_reclaimed_saved_month
             }
         )
-        binding.reclaimedValue.text = reclaimedMinutes.toString()
+        if (reclaimedMinutes >= 60) {
+            binding.reclaimedValue.text = MinutesFormatter.format(reclaimedMinutes)
+            binding.reclaimedUnit.text = ""
+        } else {
+            binding.reclaimedValue.text = reclaimedMinutes.toString()
+            binding.reclaimedUnit.text = getString(R.string.insights_reclaimed_unit)
+        }
 
         val nudgeCount = StatsStore.totalNudgeCount(context, days)
         val previousNudgeCount = StatsStore.totalNudgeCount(context, days, endOffsetDays = days)

@@ -1,6 +1,8 @@
 package com.hcr.stormroot.fragments.main
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,8 +27,21 @@ import com.hcr.stormroot.ui.dialogs.SittingThresholdDialog
 
 class OverviewFragment : Fragment() {
 
+    private companion object {
+        // Stats were previously only refreshed in onResume/onViewCreated, so they went stale if
+        // a nudge session started or ended while the user stayed on this screen.
+        const val STATS_REFRESH_INTERVAL_MS = 30_000L
+    }
+
     private lateinit var binding: FragmentOverviewBinding
     private var isRequestingUsageAccess = false
+    private val statsRefreshHandler = Handler(Looper.getMainLooper())
+    private val statsRefreshRunnable = object : Runnable {
+        override fun run() {
+            updateStats()
+            statsRefreshHandler.postDelayed(this, STATS_REFRESH_INTERVAL_MS)
+        }
+    }
 
     private val usageAccessSettingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -89,6 +104,13 @@ class OverviewFragment : Fragment() {
         updateModuleTitles()
         updateAnchorsCount()
         updateStats()
+        statsRefreshHandler.removeCallbacks(statsRefreshRunnable)
+        statsRefreshHandler.postDelayed(statsRefreshRunnable, STATS_REFRESH_INTERVAL_MS)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        statsRefreshHandler.removeCallbacks(statsRefreshRunnable)
     }
 
     private fun updateModuleTitles() {
@@ -161,14 +183,17 @@ class OverviewFragment : Fragment() {
             updateAnchorsCount()
             return
         }
-        updateBedtimeSwitch()
-        BedtimeDialog.show(requireContext(), onConfirmed = {
-            updateBedtimeDisplay()
-            BedtimeDriftPrefs.setEnabled(requireContext(), true)
-            OverlayService.startMonitor(requireContext())
-            updateBedtimeSwitch()
-            updateAnchorsCount()
-        })
+        BedtimeDialog.show(
+            requireContext(),
+            onConfirmed = {
+                updateBedtimeDisplay()
+                BedtimeDriftPrefs.setEnabled(requireContext(), true)
+                OverlayService.startMonitor(requireContext())
+                updateBedtimeSwitch()
+                updateAnchorsCount()
+            },
+            onCancelled = { updateBedtimeSwitch() }
+        )
     }
 
     private fun updateDoomscrollSwitch() {
@@ -185,11 +210,14 @@ class OverviewFragment : Fragment() {
             updateAnchorsCount()
             return
         }
-        updateDoomscrollSwitch()
-        DoomscrollAppsDialog.show(requireContext(), onConfirmed = {
-            updateModuleTitles()
-            enableDoomscroll()
-        })
+        DoomscrollAppsDialog.show(
+            requireContext(),
+            onConfirmed = {
+                updateModuleTitles()
+                enableDoomscroll()
+            },
+            onCancelled = { updateDoomscrollSwitch() }
+        )
     }
 
     private fun enableDoomscroll() {
@@ -218,11 +246,14 @@ class OverviewFragment : Fragment() {
             updateAnchorsCount()
             return
         }
-        updateSittingRootsSwitch()
-        SittingThresholdDialog.show(requireContext(), onConfirmed = {
-            updateModuleTitles()
-            enableSittingRoots()
-        })
+        SittingThresholdDialog.show(
+            requireContext(),
+            onConfirmed = {
+                updateModuleTitles()
+                enableSittingRoots()
+            },
+            onCancelled = { updateSittingRootsSwitch() }
+        )
     }
 
     private fun enableSittingRoots() {

@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ClaudeCodeEditorTabs">
-    <option name="activeSessionId" value="137db824-7e1e-4962-883c-fec61657743c" />
+    <option name="activeSessionId" value="66636092-e43f-4653-bc88-8d93d1c352db" />
     <option name="openSessionIds">
       <list>
         <option value="66636092-e43f-4653-bc88-8d93d1c352db" />
-        <option value="137db824-7e1e-4962-883c-fec61657743c" />
       </list>
     </option>
     <option name="sessionPaths">
       <map>
-        <entry key="137db824-7e1e-4962-883c-fec61657743c" value="/sessions/384bb9e2-249e-415f-92d6-64995aa59718" />
         <entry key="66636092-e43f-4653-bc88-8d93d1c352db" value="/sessions/6723789a-3c3f-42c8-85ae-c81eb4b6eced" />
       </map>
     </option>
     <option name="sessionTitles">
       <map>
-        <entry key="137db824-7e1e-4962-883c-fec61657743c" value="An app has already used 10 minutes, I installed o" />
         <entry key="66636092-e43f-4653-bc88-8d93d1c352db" value="@app/src/main/res/layout/dialog_sitting_threshold." />
       </map>
     </option>

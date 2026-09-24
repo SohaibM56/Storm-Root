@@ -15,6 +15,7 @@ import com.hcr.stormroot.core.bedtime.BedtimeDriftPrefs
 import com.hcr.stormroot.core.doomscroll.DoomscrollPrefs
 import com.hcr.stormroot.core.overlay.OverlayService
 import com.hcr.stormroot.core.permissions.ActivityRecognitionPermission
+import com.hcr.stormroot.core.permissions.OverlayPermission
 import com.hcr.stormroot.core.permissions.UsageAccessPermission
 import com.hcr.stormroot.core.sitting.SittingRootsPrefs
 import com.hcr.stormroot.core.stats.StatsStore
@@ -33,8 +34,11 @@ class OverviewFragment : Fragment() {
         const val STATS_REFRESH_INTERVAL_MS = 30_000L
     }
 
+    private enum class PendingOverlayModule { BEDTIME, DOOMSCROLL, SITTING_ROOTS }
+
     private lateinit var binding: FragmentOverviewBinding
     private var isRequestingUsageAccess = false
+    private var pendingOverlayModule: PendingOverlayModule? = null
     private val statsRefreshHandler = Handler(Looper.getMainLooper())
     private val statsRefreshRunnable = object : Runnable {
         override fun run() {
@@ -54,6 +58,29 @@ class OverviewFragment : Fragment() {
             }
             updateDoomscrollSwitch()
             updateAnchorsCount()
+        }
+    }
+
+    private val overlayPermissionSettingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        val module = pendingOverlayModule
+        pendingOverlayModule = null
+        if (module == null) return@registerForActivityResult
+        if (!OverlayPermission.isGranted(requireContext())) {
+            // User backed out of the settings screen without granting — reflect the switch
+            // back to off rather than re-launching the settings screen automatically.
+            when (module) {
+                PendingOverlayModule.BEDTIME -> updateBedtimeSwitch()
+                PendingOverlayModule.DOOMSCROLL -> updateDoomscrollSwitch()
+                PendingOverlayModule.SITTING_ROOTS -> updateSittingRootsSwitch()
+            }
+            return@registerForActivityResult
+        }
+        when (module) {
+            PendingOverlayModule.BEDTIME -> enableBedtime()
+            PendingOverlayModule.DOOMSCROLL -> enableDoomscroll()
+            PendingOverlayModule.SITTING_ROOTS -> enableSittingRoots()
         }
     }
 
@@ -170,7 +197,7 @@ class OverviewFragment : Fragment() {
     }
 
     private fun updateBedtimeSwitch() {
-        val enabled = BedtimeDriftPrefs.isEnabled(requireContext())
+        val enabled = BedtimeDriftPrefs.isEnabled(requireContext()) && OverlayPermission.isGranted(requireContext())
         binding.bedtimeDriftSwitch.setOnCheckedChangeListener(null)
         binding.bedtimeDriftSwitch.isChecked = enabled
         binding.bedtimeDriftSwitch.setOnCheckedChangeListener { _, isChecked -> onBedtimeToggled(isChecked) }
@@ -187,17 +214,28 @@ class OverviewFragment : Fragment() {
             requireContext(),
             onConfirmed = {
                 updateBedtimeDisplay()
-                BedtimeDriftPrefs.setEnabled(requireContext(), true)
-                OverlayService.startMonitor(requireContext())
-                updateBedtimeSwitch()
-                updateAnchorsCount()
+                enableBedtime()
             },
             onCancelled = { updateBedtimeSwitch() }
         )
     }
 
+    private fun enableBedtime() {
+        if (!OverlayPermission.isGranted(requireContext())) {
+            pendingOverlayModule = PendingOverlayModule.BEDTIME
+            overlayPermissionSettingsLauncher.launch(OverlayPermission.requestIntent(requireContext()))
+            return
+        }
+        BedtimeDriftPrefs.setEnabled(requireContext(), true)
+        OverlayService.startMonitor(requireContext())
+        updateBedtimeSwitch()
+        updateAnchorsCount()
+    }
+
     private fun updateDoomscrollSwitch() {
-        val enabled = DoomscrollPrefs.isEnabled(requireContext()) && UsageAccessPermission.isGranted(requireContext())
+        val enabled = DoomscrollPrefs.isEnabled(requireContext()) &&
+            OverlayPermission.isGranted(requireContext()) &&
+            UsageAccessPermission.isGranted(requireContext())
         binding.doomscrollMistSwitch.setOnCheckedChangeListener(null)
         binding.doomscrollMistSwitch.isChecked = enabled
         binding.doomscrollMistSwitch.setOnCheckedChangeListener { _, isChecked -> onDoomscrollToggled(isChecked) }
@@ -221,6 +259,11 @@ class OverviewFragment : Fragment() {
     }
 
     private fun enableDoomscroll() {
+        if (!OverlayPermission.isGranted(requireContext())) {
+            pendingOverlayModule = PendingOverlayModule.DOOMSCROLL
+            overlayPermissionSettingsLauncher.launch(OverlayPermission.requestIntent(requireContext()))
+            return
+        }
         if (!UsageAccessPermission.isGranted(requireContext())) {
             isRequestingUsageAccess = true
             usageAccessSettingsLauncher.launch(UsageAccessPermission.requestIntent())
@@ -233,7 +276,9 @@ class OverviewFragment : Fragment() {
     }
 
     private fun updateSittingRootsSwitch() {
-        val enabled = SittingRootsPrefs.isEnabled(requireContext()) && ActivityRecognitionPermission.isGranted(requireContext())
+        val enabled = SittingRootsPrefs.isEnabled(requireContext()) &&
+            OverlayPermission.isGranted(requireContext()) &&
+            ActivityRecognitionPermission.isGranted(requireContext())
         binding.sittingRootsSwitch.setOnCheckedChangeListener(null)
         binding.sittingRootsSwitch.isChecked = enabled
         binding.sittingRootsSwitch.setOnCheckedChangeListener { _, isChecked -> onSittingRootsToggled(isChecked) }
@@ -257,6 +302,11 @@ class OverviewFragment : Fragment() {
     }
 
     private fun enableSittingRoots() {
+        if (!OverlayPermission.isGranted(requireContext())) {
+            pendingOverlayModule = PendingOverlayModule.SITTING_ROOTS
+            overlayPermissionSettingsLauncher.launch(OverlayPermission.requestIntent(requireContext()))
+            return
+        }
         if (!ActivityRecognitionPermission.isGranted(requireContext())) {
             activityRecognitionLauncher.launch(ActivityRecognitionPermission.PERMISSION)
             return

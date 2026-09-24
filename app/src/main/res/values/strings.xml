@@ -32,7 +32,7 @@
     <string name="dialog_doomscroll_apps_empty">No apps found</string>
     <string name="dialog_doomscroll_limit_label">Daily limit</string>
     <string name="dialog_doomscroll_limit_help">Scroll to set your daily doomscroll allowance.</string>
-    <string name="module_title_minutes_suffix">(%1$d Minutes)</string>
+    <string name="module_title_minutes_suffix">(%1$s)</string>
     <string name="dialog_bedtime_title">Bedtime Drift</string>
     <string name="dialog_bedtime_subtitle">Choose when your wind-down window starts.</string>
     <string name="dialog_bedtime_time_label">Bedtime Drift</string>

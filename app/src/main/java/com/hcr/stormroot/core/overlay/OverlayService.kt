@@ -150,6 +150,12 @@ class OverlayService : Service() {
 
     private var doomscrollEffectView: View? = null
     private var doomscrollEffect: String? = null
+    // UsageStatsManager only finalizes an app's totalTimeInForeground when its session ends
+    // (backgrounded / screen off) — while the user stays inside a target app, the stat-based
+    // usedMinutes below stays frozen. Track the live session ourselves so limits still trip
+    // while the user never leaves the app.
+    private var doomscrollSessionPackage: String? = null
+    private var doomscrollSessionStartMillis: Long = 0L
     // UsageStatsManager queries (queryEvents over a 6h window, queryUsageStats) are genuinely
     // slow system calls. Running them on the main-looper handler every 4s (DOOMSCROLL_TICK_MS)
     // was blocking the main thread periodically, including UI taps in the host Activity since
@@ -736,7 +742,8 @@ class OverlayService : Service() {
         }
         usageAccessRevokedNotified = false
 
-        if (System.currentTimeMillis() < DoomscrollPrefs.getSnoozedUntil(this)) {
+        val snoozedUntil = DoomscrollPrefs.getSnoozedUntil(this)
+        if (System.currentTimeMillis() < snoozedUntil) {
             clearDoomscrollLayer()
             return
         }
@@ -774,13 +781,23 @@ class OverlayService : Service() {
         if (!isDoomscrollMonitorActive) return
 
         if (foregroundPackage == null || foregroundPackage !in targetPackages) {
+            doomscrollSessionPackage = null
             clearDoomscrollLayer()
             return
         }
 
+        val now = System.currentTimeMillis()
+        if (doomscrollSessionPackage != foregroundPackage) {
+            doomscrollSessionPackage = foregroundPackage
+            doomscrollSessionStartMillis = now
+        }
+        val liveSessionMinutes = ((now - doomscrollSessionStartMillis) / 60_000L).toInt()
+        val liveUsedMinutes = usedMinutes + liveSessionMinutes
+        val dailyLimit = DoomscrollPrefs.getDailyLimitMinutes(this)
+
         val result = DoomscrollEngine.calculate(
-            usedMinutes,
-            DoomscrollPrefs.getDailyLimitMinutes(this),
+            liveUsedMinutes,
+            dailyLimit,
             DoomscrollPrefs.getRampMinutes(this)
         )
 

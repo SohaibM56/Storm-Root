@@ -3,15 +3,26 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="@dimen/_170sdp"
     android:layout_height="wrap_content"
-    android:layout_marginEnd="@dimen/_12sdp"
+    android:layout_margin="@dimen/_6sdp"
+    android:background="@drawable/bg_dialog_section"
     android:gravity="center_vertical"
     android:orientation="horizontal"
+    android:paddingHorizontal="@dimen/_10sdp"
     android:paddingVertical="@dimen/_8sdp">
+
+    <CheckBox
+        android:id="@+id/appCheckbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="false"
+        android:focusable="false"
+        app:buttonTint="@color/primary" />
 
     <ImageView
         android:id="@+id/appIcon"
         android:layout_width="@dimen/_28sdp"
         android:layout_height="@dimen/_28sdp"
+        android:layout_marginStart="@dimen/_10sdp"
         android:contentDescription="@null" />
 
     <com.google.android.material.textview.MaterialTextView
@@ -24,13 +35,5 @@
         android:maxLines="1"
         android:textColor="@color/text_primary"
         android:textSize="@dimen/_12ssp" />
-
-    <CheckBox
-        android:id="@+id/appCheckbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="false"
-        android:focusable="false"
-        app:buttonTint="@color/primary" />
 
 </LinearLayout>

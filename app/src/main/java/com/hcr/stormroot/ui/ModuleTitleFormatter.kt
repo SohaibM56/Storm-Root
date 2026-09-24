@@ -7,10 +7,11 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import androidx.core.content.ContextCompat
 import com.hcr.stormroot.R
+import com.hcr.stormroot.ui.dialogs.MinutesFormatter
 
 object ModuleTitleFormatter {
     fun withMinutes(context: Context, title: String, minutes: Int): CharSequence {
-        val suffix = context.getString(R.string.module_title_minutes_suffix, minutes)
+        val suffix = context.getString(R.string.module_title_minutes_suffix, MinutesFormatter.format(minutes))
         val full = "$title $suffix"
         val suffixStart = title.length + 1
         return SpannableString(full).apply {

@@ -35,6 +35,7 @@
             android:value="@string/admob_app_id" />
 
         <activity
+            android:screenOrientation="portrait"
             android:name=".activities.OnboardingActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
@@ -46,6 +47,7 @@
         </activity>
 
         <activity
+            android:screenOrientation="portrait"
             android:name=".activities.MainActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
